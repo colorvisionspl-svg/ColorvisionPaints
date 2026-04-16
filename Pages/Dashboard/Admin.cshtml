@@ -1,0 +1,343 @@
+@page "/Dashboard/Admin"
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Dashboard Overview";
+}
+
+<!-- ═══════════════════════════════════════════════════════════
+     ROW 1 — Page Header
+     ═══════════════════════════════════════════════════════════ -->
+<div class="page-header">
+    <h1 class="page-title">Dashboard Overview</h1>
+    <button class="date-pill" id="date-filter-btn" aria-label="Select date range">Last 30 Days</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ROW 2 — KPI STAT CARDS (glassmorphism)
+     ═══════════════════════════════════════════════════════════ -->
+<div class="kpi-grid" id="kpi-grid">
+
+    <!-- Card 1: Total Revenue -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">Total Revenue</span>
+            <div class="kpi-card-icon-wrap" style="color: var(--color-icon-blue);">
+                <!-- IndianRupee icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/>
+                </svg>
+            </div>
+        </div>
+        <div class="kpi-card-value">₹24,50,000</div>
+        <div class="kpi-card-sub">+12% from last month</div>
+    </div>
+
+    <!-- Card 2: Sales Volume -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">Sales Volume</span>
+            <div class="kpi-card-icon-wrap" style="color: var(--color-icon-indigo);">
+                <!-- ShoppingCart icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                </svg>
+            </div>
+        </div>
+        <div class="kpi-card-value">3,420</div>
+        <div class="kpi-card-sub">+5.4% from last month</div>
+    </div>
+
+    <!-- Card 3: Inventory Level -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">Inventory Level</span>
+            <div class="kpi-card-icon-wrap" style="color: var(--color-icon-teal);">
+                <!-- Package icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                </svg>
+            </div>
+        </div>
+        <div class="kpi-card-value">85%</div>
+        <div class="kpi-card-sub">Healthy status</div>
+    </div>
+
+    <!-- Card 4: Active Operations -->
+    <div class="glass-card kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">Active Operations</span>
+            <div class="kpi-card-icon-wrap" style="color: var(--color-icon-pink);">
+                <!-- Activity icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+            </div>
+        </div>
+        <div class="kpi-card-value">47</div>
+        <div class="kpi-card-sub warning">12 require attention</div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ROW 3 — CHART CARDS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="chart-grid">
+
+    <!-- Revenue Trend Chart -->
+    <div class="chart-card chart-card-blue">
+        <div class="chart-card-header">
+            <span class="chart-card-title">Revenue Trend</span>
+            <button class="chart-date-pill" aria-label="Date range">This Month</button>
+        </div>
+        <canvas id="revenueChart" height="220" aria-label="Revenue trend bar chart"></canvas>
+    </div>
+
+    <!-- Sales by Category Donut -->
+    <div class="chart-card chart-card-pink">
+        <div class="chart-card-header">
+            <span class="chart-card-title">Sales by Category</span>
+            <button class="chart-date-pill" aria-label="Date range">This Month</button>
+        </div>
+        <canvas id="salesPieChart" height="180" aria-label="Sales by category donut chart"></canvas>
+        <div class="pie-legend" id="pie-legend"></div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     ROW 4 — BOTTOM CARDS
+     ═══════════════════════════════════════════════════════════ -->
+<div class="bottom-grid">
+
+    <!-- Recent Orders -->
+    <div class="glass-card orders-card">
+        <div class="card-header-row">
+            <h3>Recent Orders</h3>
+            <a href="#" class="view-all-link" aria-label="View all orders">View all →</a>
+        </div>
+        <table class="orders-table" role="table" aria-label="Recent orders">
+            <thead>
+                <tr>
+                    <th>Order#</th>
+                    <th>Dealer</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>#ORD-1041</td>
+                    <td>Srinivas Paints</td>
+                    <td>₹1,24,500</td>
+                    <td><span class="status-badge status-delivered">Delivered</span></td>
+                    <td>Apr 15, 2026</td>
+                </tr>
+                <tr>
+                    <td>#ORD-1040</td>
+                    <td>Rathi Colour House</td>
+                    <td>₹87,200</td>
+                    <td><span class="status-badge status-approved">Approved</span></td>
+                    <td>Apr 14, 2026</td>
+                </tr>
+                <tr>
+                    <td>#ORD-1039</td>
+                    <td>Vivek Enterprises</td>
+                    <td>₹2,03,750</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td>Apr 14, 2026</td>
+                </tr>
+                <tr>
+                    <td>#ORD-1038</td>
+                    <td>Mehta Decorators</td>
+                    <td>₹56,000</td>
+                    <td><span class="status-badge status-delivered">Delivered</span></td>
+                    <td>Apr 13, 2026</td>
+                </tr>
+                <tr>
+                    <td>#ORD-1037</td>
+                    <td>Krishna Paint Store</td>
+                    <td>₹1,45,800</td>
+                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td>Apr 12, 2026</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Live Field Activity -->
+    <div class="glass-card field-card">
+        <div class="card-header-row">
+            <h3>Field Activity — Live</h3>
+            <span class="active-badge">
+                <span class="active-dot" aria-hidden="true"></span>
+                47 active
+            </span>
+        </div>
+
+        <!-- Map placeholder -->
+        <div class="map-placeholder" id="live-map" role="img" aria-label="Live map placeholder">
+            Live Map — Google Maps loads here
+        </div>
+
+        <!-- Agent list -->
+        <div class="field-agent-list" aria-label="Active field agents">
+            <div class="field-agent-row">
+                <div class="agent-avatar" aria-hidden="true">RK</div>
+                <div class="agent-info">
+                    <div class="agent-name">Rajesh Kumar</div>
+                    <div class="agent-location">At Srinivas Paints, Hyderabad</div>
+                </div>
+                <div class="agent-status-dot" aria-label="Active" title="Active"></div>
+            </div>
+            <div class="field-agent-row">
+                <div class="agent-avatar" aria-hidden="true">PS</div>
+                <div class="agent-info">
+                    <div class="agent-name">Priya Sharma</div>
+                    <div class="agent-location">At Rathi Colour House, Mumbai</div>
+                </div>
+                <div class="agent-status-dot" aria-label="Active" title="Active"></div>
+            </div>
+            <div class="field-agent-row">
+                <div class="agent-avatar" aria-hidden="true">AM</div>
+                <div class="agent-info">
+                    <div class="agent-name">Arjun Mehta</div>
+                    <div class="agent-location">At Krishna Paint Store, Pune</div>
+                </div>
+                <div class="agent-status-dot" aria-label="Active" title="Active"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section PageScripts {
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+    (function () {
+        // ── Revenue Trend Bar Chart ──
+        var revCtx = document.getElementById('revenueChart');
+        if (revCtx) {
+            var days = ['Apr 10', 'Apr 11', 'Apr 12', 'Apr 13', 'Apr 14', 'Apr 15', 'Apr 16'];
+            var revData = [320000, 480000, 410000, 590000, 430000, 620000, 540000];
+
+            new Chart(revCtx, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        data: revData,
+                        backgroundColor: 'rgba(255, 255, 255, 0.80)',
+                        borderRadius: 6,
+                        borderRadiusTopLeft: 6,
+                        borderRadiusTopRight: 6,
+                        borderSkipped: false,
+                        hoverBackgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.75,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    animation: { duration: 600, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#FFFFFF',
+                            borderColor: 'rgba(0,0,0,0.06)',
+                            borderWidth: 1,
+                            titleColor: '#1A1D2E',
+                            bodyColor: '#4A5270',
+                            padding: 10,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: function(ctx) {
+                                    return ' ₹' + (ctx.raw / 100000).toFixed(2) + ' L';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            border: { display: false },
+                            ticks: {
+                                color: 'rgba(74, 82, 112, 0.7)',
+                                font: { size: 11, family: "'Gilroy', 'Plus Jakarta Sans', sans-serif" }
+                            }
+                        },
+                        y: {
+                            display: false,
+                            grid: { display: false },
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── Sales by Category Donut Chart ──
+        var pieCtx = document.getElementById('salesPieChart');
+        if (pieCtx) {
+            var pieData = {
+                labels: ['Exterior Emulsion', 'Interior Emulsion', 'Primer', 'Other'],
+                datasets: [{
+                    data: [38, 29, 18, 15],
+                    backgroundColor: ['#4F6EF7', '#7C6FF7', '#2DC7A4', '#F76F9A'],
+                    borderWidth: 0,
+                    hoverOffset: 6,
+                }]
+            };
+
+            new Chart(pieCtx, {
+                type: 'doughnut',
+                data: pieData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '60%',
+                    animation: { duration: 700, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#FFFFFF',
+                            borderColor: 'rgba(0,0,0,0.06)',
+                            borderWidth: 1,
+                            titleColor: '#1A1D2E',
+                            bodyColor: '#4A5270',
+                            padding: 10,
+                            cornerRadius: 10,
+                            callbacks: {
+                                label: function(ctx) { return ' ' + ctx.parsed + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Build legend
+            var legendEl = document.getElementById('pie-legend');
+            if (legendEl) {
+                var colors = ['#4F6EF7', '#7C6FF7', '#2DC7A4', '#F76F9A'];
+                var labels = ['Exterior Emulsion', 'Interior Emulsion', 'Primer', 'Other'];
+                var pcts   = [38, 29, 18, 15];
+                var html = '';
+                for (var i = 0; i < labels.length; i++) {
+                    html += '<div class="pie-legend-item">'
+                        + '<div class="pie-dot" style="background:' + colors[i] + '"></div>'
+                        + '<span class="pie-legend-label">' + labels[i] + '</span>'
+                        + '<span class="pie-legend-pct">' + pcts[i] + '%</span>'
+                        + '</div>';
+                }
+                legendEl.innerHTML = html;
+            }
+        }
+    })();
+    </script>
+}

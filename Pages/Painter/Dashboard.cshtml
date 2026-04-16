@@ -1,0 +1,401 @@
+@page
+@model ColorvisionPaintsERP.Pages.Painter.DashboardModel
+@{
+    Layout = "_PainterLayout";
+    ViewData["Title"] = "My Painter Dashboard";
+}
+
+<div class="pwa-root">
+
+    <!-- ── HOME TAB ── -->
+    <div id="tab-home" class="pwa-scroll tab-pane active-pane">
+        <!-- Topbar -->
+        <div class="pwa-topbar" style="padding-bottom:40px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                    <p style="font-size:13px;opacity:0.7;margin-bottom:2px">Welcome back,</p>
+                    <h1 style="font-size:22px;font-weight:900;color:#fff" id="home-name">Painter</h1>
+                </div>
+                <span class="tier-badge" id="home-tier-badge" style="font-size:12px;padding:5px 14px;align-self:flex-start;margin-top:4px">Bronze</span>
+            </div>
+        </div>
+
+        <!-- Balance Card (floating) -->
+        <div style="margin:-28px 16px 0;position:relative;z-index:1">
+            <div class="pwa-balance-card">
+                <p class="pwa-balance-label">Your Balance</p>
+                <p class="pwa-balance-value" id="home-balance">0</p>
+                <p class="pwa-balance-inr">= ₹<span id="home-inr">0</span> cashback value</p>
+                <div style="margin-top:16px">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+                        <span style="font-size:11px;opacity:0.7" id="home-tier-label">Bronze</span>
+                        <span style="font-size:11px;opacity:0.5" id="home-next-label">Silver</span>
+                    </div>
+                    <div style="height:5px;background:rgba(255,255,255,0.15);border-radius:20px;overflow:hidden">
+                        <div style="height:100%;background:rgba(255,255,255,0.8);border-radius:20px;transition:width .6s" id="home-tier-bar"></div>
+                    </div>
+                    <p style="font-size:10px;opacity:0.5;margin-top:4px" id="home-tier-info"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 16px 0">
+            <button class="pwa-btn pwa-btn-success" style="height:54px;font-size:14px" onclick="switchTab('redeem')">
+                💰 Redeem Now
+            </button>
+            <button class="pwa-btn pwa-btn-ghost" style="height:54px;font-size:14px" onclick="switchTab('leaderboard')">
+                🏆 Leaderboard
+            </button>
+        </div>
+
+        <!-- Recent Scans -->
+        <div class="pwa-card" style="margin-top:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <p style="font-size:14px;font-weight:800;color:#1A1D2E">Recent Scans</p>
+                <span style="font-size:12px;color:#4F6EF7;font-weight:600;cursor:pointer" onclick="switchTab('profile')">View All</span>
+            </div>
+            <div id="recent-scans">
+                <!-- injected by JS -->
+                <p style="font-size:13px;color:#8B92A9;text-align:center;padding:16px">No scans yet. Scan a QR code to start earning!</p>
+            </div>
+        </div>
+
+        <!-- Refer a friend banner -->
+        <div class="pwa-card" style="background:linear-gradient(135deg,rgba(79,110,247,0.08),rgba(124,111,247,0.05));border:1.5px solid rgba(79,110,247,0.15)">
+            <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:32px">🎁</span>
+                <div>
+                    <p style="font-size:13px;font-weight:700;color:#1A1D2E;margin:0">Coming Soon: Refer & Earn</p>
+                    <p style="font-size:12px;color:#8B92A9;margin:2px 0 0">Refer a painter friend and earn 100 bonus points</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="height:16px"></div>
+    </div>
+
+    <!-- ── REDEEM TAB ── -->
+    <div id="tab-redeem" class="pwa-scroll tab-pane" style="display:none">
+        <div class="pwa-topbar">
+            <h1 class="pwa-title">Redeem Points</h1>
+            <p class="pwa-subtitle">Transfer cash directly to your UPI account</p>
+        </div>
+
+        <div class="pwa-card-floating">
+            <!-- Balance summary -->
+            <div style="background:#F8F9FE;border-radius:14px;padding:16px;text-align:center;margin-bottom:24px">
+                <p style="font-size:12px;color:#8B92A9;font-weight:600">Available Balance</p>
+                <p style="font-size:36px;font-weight:900;color:#4F6EF7" id="redeem-balance">0 pts</p>
+                <p style="font-size:13px;color:#8B92A9">= ₹<span id="redeem-inr">0</span></p>
+            </div>
+
+            <!-- UPI Redemption -->
+            <p style="font-size:14px;font-weight:800;color:#1A1D2E;margin-bottom:14px">💳 UPI Cashback</p>
+
+            <label class="pwa-input-label">Redeem Amount (₹)</label>
+            <input type="range" class="pwa-range" id="redeem-slider" min="100" max="1000" value="500" step="50" oninput="onSliderChange(this.value)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+                <span style="font-size:12px;color:#8B92A9">Min ₹100</span>
+                <span style="font-size:18px;font-weight:900;color:#4F6EF7" id="redeem-amount">₹500</span>
+                <span style="font-size:12px;color:#8B92A9" id="redeem-max-label">Max ₹1000</span>
+            </div>
+
+            <label class="pwa-input-label">UPI ID</label>
+            <input type="text" class="pwa-input" id="redeem-upi" placeholder="yourname@@bank" style="margin-bottom:20px">
+
+            <button class="pwa-btn pwa-btn-success" onclick="submitRedemption()">
+                Request ₹<span id="btn-redeem-amt">500</span> Cashback
+            </button>
+            <p style="font-size:11px;color:#8B92A9;text-align:center;margin-top:10px;line-height:1.5">
+                Processed within 24 hours · TDS applicable if annual rewards &gt; ₹20,000
+            </p>
+
+            <!-- Reward Catalog -->
+            <div style="margin-top:28px;border-top:1px solid rgba(0,0,0,0.06);padding-top:20px">
+                <p style="font-size:14px;font-weight:800;color:#1A1D2E;margin-bottom:14px">🛍 Reward Catalog</p>
+                <div class="catalog-grid">
+                    @foreach (var item in new[]{ ("🖌 Brush Set","250 pts"), ("🎽 CV T-Shirt","400 pts"), ("🔊 Speaker","1200 pts"), ("🎧 Earbuds","800 pts") })
+                    {
+                        <div class="catalog-item">
+                            <p style="font-size:28px;margin-bottom:8px">@item.Item1.Split(' ')[0]</p>
+                            <p style="font-size:12px;font-weight:700;color:#1A1D2E;margin-bottom:4px">@item.Item1.Substring(item.Item1.IndexOf(' ')+1)</p>
+                            <p style="font-size:11px;color:#4F6EF7;font-weight:700">@item.Item2</p>
+                            <div class="catalog-soon">Coming Soon</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div style="height:16px"></div>
+    </div>
+
+    <!-- ── LEADERBOARD TAB ── -->
+    <div id="tab-leaderboard" class="pwa-scroll tab-pane" style="display:none">
+        <div class="pwa-topbar">
+            <h1 class="pwa-title">🏆 Leaderboard</h1>
+            <p class="pwa-subtitle">Top painters this month</p>
+        </div>
+
+        <div class="pwa-card-floating">
+            <!-- City / National tabs -->
+            <div style="display:flex;background:#F8F9FE;border-radius:12px;padding:4px;margin-bottom:20px">
+                <button id="lb-city-tab" style="flex:1;height:38px;border:none;border-radius:9px;background:#fff;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.08);cursor:pointer;color:#4F6EF7" onclick="showLbCity()">My City</button>
+                <button id="lb-national-tab" style="flex:1;height:38px;border:none;border-radius:9px;background:transparent;font-weight:700;font-size:13px;cursor:pointer;color:#8B92A9" onclick="showLbNational()">All India</button>
+            </div>
+
+            <div id="lb-list">
+                <!-- injected by JS -->
+            </div>
+        </div>
+        <div style="height:16px"></div>
+    </div>
+
+    <!-- ── PROFILE TAB ── -->
+    <div id="tab-profile" class="pwa-scroll tab-pane" style="display:none">
+        <div class="pwa-topbar">
+            <h1 class="pwa-title">My Profile</h1>
+            <p class="pwa-subtitle">Your account & transaction history</p>
+        </div>
+
+        <div class="pwa-card-floating">
+            <!-- Avatar -->
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+                <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4F6EF7,#7C6FF7);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff" id="profile-avatar">P</div>
+                <div>
+                    <p style="font-size:16px;font-weight:800;color:#1A1D2E;margin:0" id="profile-name">—</p>
+                    <p style="font-size:13px;color:#8B92A9" id="profile-mobile">—</p>
+                    <span class="tier-badge" id="profile-tier-badge" style="margin-top:4px">Bronze</span>
+                </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+                <div>
+                    <label class="pwa-input-label">City</label>
+                    <input type="text" class="pwa-input" id="profile-city" readonly>
+                </div>
+                <div>
+                    <label class="pwa-input-label">UPI ID (editable)</label>
+                    <input type="text" class="pwa-input" id="profile-upi" placeholder="yourname@@bank">
+                </div>
+            </div>
+
+            <button class="pwa-btn" style="background:rgba(79,110,247,0.1);color:#4F6EF7;height:46px;font-size:14px;margin-bottom:12px" onclick="saveProfile()">
+                Save Changes
+            </button>
+
+            <div style="border-top:1px solid rgba(0,0,0,0.06);padding-top:16px;margin-top:4px">
+                <p style="font-size:14px;font-weight:800;color:#1A1D2E;margin-bottom:12px">Transaction History</p>
+                <div id="txn-history">
+                    <p style="font-size:13px;color:#8B92A9;text-align:center;padding:16px">No transactions yet</p>
+                </div>
+            </div>
+
+            <div style="border-top:1px solid rgba(0,0,0,0.06);padding-top:16px;margin-top:16px">
+                <button class="pwa-btn" style="background:rgba(247,111,111,0.08);color:#F76F6F;height:46px;font-size:14px" onclick="logout()">
+                    Logout
+                </button>
+            </div>
+        </div>
+        <div style="height:16px"></div>
+    </div>
+
+    <!-- ── BOTTOM NAV ── -->
+    <nav class="pwa-bottom-nav">
+        <a class="pwa-nav-item active" id="nav-home" href="#" onclick="switchTab('home'); return false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Home
+        </a>
+        <a class="pwa-nav-item" id="nav-redeem" href="#" onclick="switchTab('redeem'); return false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Redeem
+        </a>
+        <a class="pwa-nav-item" id="nav-leaderboard" href="#" onclick="switchTab('leaderboard'); return false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            Rank
+        </a>
+        <a class="pwa-nav-item" id="nav-profile" href="#" onclick="switchTab('profile'); return false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+        </a>
+    </nav>
+</div>
+
+@section PageScripts {
+<script>
+/* ── PAINTER DATA from localStorage ── */
+const painterName  = localStorage.getItem('cv_painter_name') || 'Painter';
+const painterPts   = parseInt(localStorage.getItem('cv_painter_pts') || '0');
+const painterCity  = localStorage.getItem('cv_painter_city') || '—';
+const painterUpi   = localStorage.getItem('cv_painter_upi')  || '';
+const painterMob   = '+91 XXXXXXXXXX';
+
+function tierFromPts(p) { return p>=35000?'Platinum':p>=15000?'Gold':p>=5000?'Silver':'Bronze'; }
+function tierPct(p) { if(p>=35000)return 100;if(p>=15000)return Math.round((p-15000)/20000*100);if(p>=5000)return Math.round((p-5000)/10000*100);return Math.round(p/5000*100); }
+function tierNext(p) { if(p>=35000)return'—';if(p>=15000)return`${(35000-p).toLocaleString('en-IN')} more → Platinum`;if(p>=5000)return`${(15000-p).toLocaleString('en-IN')} more → Gold`;return`${(5000-p).toLocaleString('en-IN')} more → Silver`; }
+function tierNextLabel(p) { return p>=35000?'Platinum':p>=15000?'Platinum':p>=5000?'Gold':'Silver'; }
+
+const tier    = tierFromPts(painterPts);
+const tierBg  = {'Bronze':'tier-bronze','Silver':'tier-silver','Gold':'tier-gold','Platinum':'tier-platinum'}[tier]||'tier-bronze';
+
+/* ── INJECT HOME ── */
+function initHome() {
+    setText('home-name', painterName);
+    const badge = document.getElementById('home-tier-badge');
+    if (badge) { badge.textContent = tier; badge.className = 'tier-badge ' + tierBg; }
+    setText('home-balance', painterPts.toLocaleString('en-IN'));
+    setText('home-inr', painterPts.toLocaleString('en-IN'));
+    setText('home-tier-label', tier);
+    setText('home-next-label', tierNextLabel(painterPts));
+    const bar = document.getElementById('home-tier-bar');
+    if (bar) bar.style.width = tierPct(painterPts) + '%';
+    setText('home-tier-info', tierNext(painterPts));
+}
+
+/* ── INJECT PROFILE ── */
+function initProfile() {
+    const av = document.getElementById('profile-avatar');
+    if (av) av.textContent = painterName[0]?.toUpperCase() || 'P';
+    setText('profile-name', painterName);
+    setText('profile-mobile', painterMob);
+    const pb = document.getElementById('profile-tier-badge');
+    if (pb) { pb.textContent = tier; pb.className = 'tier-badge ' + tierBg; }
+    const city = document.getElementById('profile-city');
+    if (city) city.value = painterCity;
+    const upi = document.getElementById('profile-upi');
+    if (upi) upi.value = painterUpi;
+}
+
+/* ── REDEEM ── */
+function initRedeem() {
+    setText('redeem-balance', painterPts.toLocaleString('en-IN') + ' pts');
+    setText('redeem-inr', painterPts.toLocaleString('en-IN'));
+    const slider = document.getElementById('redeem-slider');
+    if (slider) slider.max = painterPts;
+    setText('redeem-max-label', 'Max ₹' + painterPts.toLocaleString('en-IN'));
+    const upi = document.getElementById('redeem-upi');
+    if (upi) upi.value = painterUpi;
+}
+
+function onSliderChange(val) {
+    setText('redeem-amount', '₹' + parseInt(val).toLocaleString('en-IN'));
+    setText('btn-redeem-amt', parseInt(val).toLocaleString('en-IN'));
+}
+
+function submitRedemption() {
+    const amt = document.getElementById('redeem-slider')?.value || 500;
+    const upi = document.getElementById('redeem-upi')?.value;
+    if (!upi) { alert('Enter your UPI ID.'); return; }
+    if (parseInt(amt) > painterPts) { alert('Insufficient balance.'); return; }
+    if (parseInt(amt) < 100)        { alert('Minimum redemption is ₹100.'); return; }
+    alert(`✅ Redemption of ₹${parseInt(amt).toLocaleString('en-IN')} submitted!\nExpected in your UPI (${upi}) within 24 hours.`);
+}
+
+/* ── LEADERBOARD ── */
+const mockLeaderboard = [
+    { name:'Mohan D.', city:'Chennai', pts:48000, self:false },
+    { name:'Ravi S.',   city:'Mumbai',  pts:22000, self:false },
+    { name:'Suresh P.', city:'Pune',    pts:9000,  self:false },
+    { name: painterName.split(' ')[0]+' '+(painterName.split(' ')[1]||'')[0]+'.', city:painterCity, pts:painterPts, self:true },
+    { name:'Anil K.',   city:'Delhi',   pts:2100,  self:false },
+];
+
+function renderLeaderboard(list) {
+    const medals = ['🥇','🥈','🥉'];
+    const container = document.getElementById('lb-list');
+    if (!container) return;
+    container.innerHTML = list.slice(0,10).sort((a,b)=>b.pts-a.pts).map((p,i)=>`
+        <div class="leaderboard-row ${p.self?'self':''}">
+            <span class="leaderboard-rank">${medals[i]||i+1}</span>
+            <div class="leaderboard-name">
+                ${p.name}
+                ${p.self?'<span style="font-size:10px;color:#4F6EF7;font-weight:700;margin-left:6px">YOU</span>':''}
+                <br><span style="font-size:11px;color:#8B92A9;font-weight:400">${p.city}</span>
+            </div>
+            <span class="leaderboard-pts">${p.pts.toLocaleString('en-IN')}</span>
+        </div>
+    `).join('');
+}
+
+function showLbCity() {
+    document.getElementById('lb-city-tab').style.cssText += 'background:#fff;color:#4F6EF7;box-shadow:0 2px 6px rgba(0,0,0,0.08)';
+    document.getElementById('lb-national-tab').style.cssText += 'background:transparent;color:#8B92A9;box-shadow:none';
+    renderLeaderboard(mockLeaderboard.filter(p=>p.city===painterCity||p.self));
+}
+
+function showLbNational() {
+    document.getElementById('lb-national-tab').style.cssText += 'background:#fff;color:#4F6EF7;box-shadow:0 2px 6px rgba(0,0,0,0.08)';
+    document.getElementById('lb-city-tab').style.cssText += 'background:transparent;color:#8B92A9;box-shadow:none';
+    renderLeaderboard(mockLeaderboard);
+}
+
+/* ── TAB SWITCH ── */
+function switchTab(name) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.pwa-nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).style.display = '';
+    document.getElementById('nav-' + name)?.classList.add('active');
+    if (name === 'leaderboard') { renderLeaderboard(mockLeaderboard); }
+    if (name === 'profile') { initProfile(); initTxnHistory(); }
+    if (name === 'redeem') { initRedeem(); }
+}
+
+/* ── TRANSACTION HISTORY ── */
+function initTxnHistory() {
+    const scanned = parseInt(localStorage.getItem('cv_scans_' + new Date().toDateString()) || '0');
+    if (!painterPts) return;
+    document.getElementById('txn-history').innerHTML = `
+        <div class="scan-item">
+            <div class="scan-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </div>
+            <div class="scan-info">
+                <p class="scan-product">QR Scan — Paint Reward</p>
+                <p class="scan-meta">${painterCity} · Today</p>
+            </div>
+            <p class="scan-pts">+${painterPts}</p>
+        </div>
+    `;
+}
+
+/* ── PROFILE SAVE ── */
+function saveProfile() {
+    const upi = document.getElementById('profile-upi')?.value;
+    localStorage.setItem('cv_painter_upi', upi||'');
+    alert('Profile updated!');
+}
+
+function logout() {
+    if(confirm('Log out from painter dashboard?')) {
+        localStorage.removeItem('cv_painter_id');
+        localStorage.removeItem('cv_painter_name');
+        localStorage.removeItem('cv_painter_pts');
+        localStorage.removeItem('cv_painter_city');
+        localStorage.removeItem('cv_painter_upi');
+        window.location.href='/';
+    }
+}
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+    if (!localStorage.getItem('cv_painter_id')) {
+        // Not logged in — redirect to a generic scan page hint
+        document.body.innerHTML = `
+            <div class="pwa-error-screen" style="background:linear-gradient(160deg,#1A1D2E,#2D3158)">
+                <div style="font-size:64px;margin-bottom:20px">🔒</div>
+                <p style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">Login Required</p>
+                <p style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:24px">Scan a ColorVision QR code to access your dashboard</p>
+                <a href="/" style="background:#4F6EF7;color:#fff;border-radius:14px;padding:14px 28px;font-weight:700;text-decoration:none;font-size:15px">Go to Homepage</a>
+            </div>`;
+        return;
+    }
+    initHome();
+    showLbCity();
+});
+</script>
+}

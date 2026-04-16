@@ -1,0 +1,118 @@
+@page
+@model ColorvisionPaintsERP.Pages.Manufacturing.ScheduleModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Production Schedule";
+    var weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/manufacturing.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Production Schedule</h1>
+            <p class="page-subtitle">Gantt chart view of all batches across production lines for the week</p>
+        </div>
+        <div class="actions">
+            <button class="btn-ghost" id="btn-prev-week" onclick="shiftWeek(-1)">← Prev Week</button>
+            <span class="glass-card" style="padding:8px 16px;font-size:13px;font-weight:700" id="week-label">
+                @weekStart.ToString("d MMM") – @weekStart.AddDays(6).ToString("d MMM yyyy")
+            </span>
+            <button class="btn-ghost" id="btn-next-week" onclick="shiftWeek(1)">Next Week →</button>
+        </div>
+    </div>
+
+    <!-- Gantt Chart -->
+    <div class="glass-card" style="padding:16px">
+        <div class="gantt-wrapper" id="gantt-container">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Today's Production Log -->
+    <div class="glass-card table-wrapper">
+        <div style="padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.05)">
+            <span style="font-size:14px;font-weight:700;color:var(--color-text-primary)">Today's Production Log</span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Batch #</th>
+                    <th>Product</th>
+                    <th>Line</th>
+                    <th>Operator</th>
+                    <th>Start</th>
+                    <th>Est. End</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.Batches.Where(b => b.StartTime.Date <= DateTime.Today && (b.EndTime == null || b.EndTime.Value.Date >= DateTime.Today)))
+                {
+                    var line = Model.Lines.FirstOrDefault(l => l.Id == b.ProductionLineId);
+                    var statusCls = b.Status switch {
+                        "In-Progress" => "status-in-progress",
+                        "Completed"   => "status-completed",
+                        "Passed"      => "status-passed",
+                        "Failed"      => "status-failed",
+                        _             => "status-planned"
+                    };
+                    <tr>
+                        <td><span class="material-pill">@b.BatchNumber</span></td>
+                        <td>@b.ProductName</td>
+                        <td>@(line?.Name ?? b.ProductionLineId)</td>
+                        <td>—</td>
+                        <td>@b.StartTime.ToString("HH:mm")</td>
+                        <td>@(b.EndTime?.ToString("HH:mm") ?? "—")</td>
+                        <td><span class="status-pill @statusCls">@b.Status</span></td>
+                    </tr>
+                }
+                @if (!Model.Batches.Any(b => b.StartTime.Date <= DateTime.Today && (b.EndTime == null || b.EndTime.Value.Date >= DateTime.Today)))
+                {
+                    <tr><td colspan="7" style="text-align:center;color:var(--color-text-muted);padding:24px">No active batches today</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/manufacturing.js" asp-append-version="true"></script>
+    <script>
+        // Serialize server data to JS
+        const LINES = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Lines.Select(l => new { l.Id, l.Name, l.Status })));
+        const BATCHES = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Batches.Select(b => new {
+            b.Id, b.BatchNumber, b.ProductionLineId, b.ProductName, b.Status,
+            startTime = b.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+            endTime = b.EndTime?.ToString("yyyy-MM-ddTHH:mm:ssZ") ?? ""
+        })));
+
+        var currentWeekStart = new Date('@weekStart.ToString("yyyy-MM-ddTHH:mm:ssZ")');
+
+        function renderCurrentGantt() {
+            const batches = BATCHES.map(b => ({
+                ...b,
+                startTime: b.startTime ? new Date(b.startTime) : new Date(),
+                endTime:   b.endTime   ? new Date(b.endTime)   : new Date(Date.now() + 864e5)
+            }));
+            MfgUI.renderGantt(LINES, batches, document.getElementById('gantt-container'), currentWeekStart);
+        }
+
+        function shiftWeek(dir) {
+            currentWeekStart = new Date(currentWeekStart.getTime() + dir * 7 * 864e5);
+            const end = new Date(currentWeekStart.getTime() + 6 * 864e5);
+            document.getElementById('week-label').textContent =
+                currentWeekStart.toLocaleDateString('en-IN', {day:'numeric',month:'short'}) + ' – ' +
+                end.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+            renderCurrentGantt();
+        }
+
+        document.addEventListener('DOMContentLoaded', renderCurrentGantt);
+    </script>
+}

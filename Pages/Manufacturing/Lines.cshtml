@@ -1,0 +1,188 @@
+@page
+@model ColorvisionPaintsERP.Pages.Manufacturing.LinesModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Production Lines";
+    var activeLines = Model.Lines.Count(l => l.Status == "Active");
+    var maintLines  = Model.Lines.Count(l => l.Status == "Maintenance");
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/manufacturing.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Production Lines</h1>
+            <p class="page-subtitle">Monitor and manage all manufacturing lines</p>
+        </div>
+        <button class="btn-primary" onclick="MfgUI.openPanel('panel-add-line')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Line
+        </button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Total Lines</p>
+            <p class="value">@Model.Lines.Count</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Active</p>
+            <p class="value" style="color:#22C997">@activeLines</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">In Maintenance</p>
+            <p class="value" style="color:#F76F6F">@maintLines</p>
+        </div>
+    </div>
+
+    <!-- Lines Grid -->
+    <div class="lines-grid">
+        @foreach (var line in Model.Lines)
+        {
+            var statusCls = line.Status switch {
+                "Active"      => "status-pill status-active  line-badge-active",
+                "Maintenance" => "status-pill status-failed  line-badge-maintenance",
+                _             => "status-pill status-draft   line-badge-idle"
+            };
+            var progressCls = line.Status == "Active" && line.ProgressPercent > 0
+                ? "linear-gradient(90deg, #4F6EF7, #7C6FF7)"
+                : "rgba(0,0,0,0.07)";
+            var pct = line.ProgressPercent > 0 ? line.ProgressPercent : 0;
+            <div class="glass-card line-card">
+                <div class="line-card-header">
+                    <div>
+                        <p class="line-title">@line.Name</p>
+                        <p class="line-capacity">@line.CapacityKgPerDay.ToString("N0") kg/day capacity</p>
+                    </div>
+                    <span class="@statusCls">@line.Status</span>
+                </div>
+
+                @if (line.Status == "Active" && !string.IsNullOrEmpty(line.CurrentBatchId))
+                {
+                    <p style="font-size:12px;color:var(--color-text-muted);margin-bottom:4px">
+                        Current Batch: <strong style="color:var(--color-text-primary)">@line.CurrentBatchId</strong>
+                    </p>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar-fill" style="width:@pct%"></div>
+                    </div>
+                    <p style="font-size:11px;color:var(--color-text-muted);text-align:right">@pct% complete</p>
+                }
+                else if (line.Status == "Active")
+                {
+                    <p style="font-size:12px;color:var(--color-text-muted);margin:8px 0">No active batch — idle</p>
+                }
+                else
+                {
+                    <p style="font-size:12px;color:#F76F6F;margin:8px 0">⚠ Under maintenance</p>
+                }
+
+                <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+                    <button class="btn-ghost" style="height:30px;font-size:12px"
+                            onclick="editLine('@line.Id','@line.Name','@line.CapacityKgPerDay','@line.Status')">
+                        Edit
+                    </button>
+                    @if (line.Status != "Maintenance")
+                    {
+                        <button class="btn-ghost" style="height:30px;font-size:12px;color:#F76F6F;border-color:rgba(247,111,111,0.3)"
+                                onclick="setMaintenance('@line.Id')">
+                            Set Maintenance
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-ghost" style="height:30px;font-size:12px;color:#22C997;border-color:rgba(34,201,151,0.3)"
+                                onclick="setActive('@line.Id')">
+                            Set Active
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="panel-overlay" onclick="MfgUI.closeAllPanels()"></div>
+
+<!-- SLIDE PANEL: ADD/EDIT LINE -->
+<div class="slide-panel" id="panel-add-line">
+    <div class="slide-panel-header">
+        <h2 id="line-panel-title">Add Production Line</h2>
+        <button class="close-panel-btn" onclick="MfgUI.closeAllPanels()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <p class="panel-section-title" style="margin-top:0">Line Details</p>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>Line Name *</label>
+                <input type="text" class="form-control" id="line-name" placeholder="e.g. Line A — Emulsion">
+            </div>
+            <div class="form-group">
+                <label>Capacity (kg/day) *</label>
+                <input type="number" class="form-control" id="line-capacity" placeholder="5000">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select class="form-control" id="line-status">
+                    <option value="Active">Active</option>
+                    <option value="Idle">Idle</option>
+                    <option value="Maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label>Notes</label>
+                <textarea class="form-control" id="line-notes" rows="3" placeholder="Optional notes…"></textarea>
+            </div>
+        </div>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="MfgUI.closeAllPanels()">Cancel</button>
+        <button class="btn-primary" onclick="saveLine()">Save Line</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/manufacturing.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { MfgUI.initPanelClosers(); });
+
+        var editingLineId = null;
+
+        function editLine(id, name, capacity, status) {
+            editingLineId = id;
+            document.getElementById('line-panel-title').textContent = 'Edit Production Line';
+            document.getElementById('line-name').value     = name;
+            document.getElementById('line-capacity').value = capacity;
+            document.getElementById('line-status').value   = status;
+            MfgUI.openPanel('panel-add-line');
+        }
+
+        function setMaintenance(id) {
+            if (confirm('Set this line to Maintenance mode?')) {
+                alert('Line set to Maintenance. Refresh to see updated status.');
+            }
+        }
+
+        function setActive(id) {
+            if (confirm('Restore this line to Active?')) {
+                alert('Line restored to Active. Refresh to see updated status.');
+            }
+        }
+
+        function saveLine() {
+            const name = document.getElementById('line-name')?.value;
+            if (!name) { alert('Line name is required.'); return; }
+            alert('Production line saved!');
+            MfgUI.closeAllPanels();
+        }
+    </script>
+}

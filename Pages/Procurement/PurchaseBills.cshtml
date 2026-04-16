@@ -1,0 +1,242 @@
+@page
+@model ColorvisionPaintsERP.Pages.Procurement.PurchaseBillsModel
+@{
+    ViewData["Title"] = "Purchase Bills";
+    Layout = "_AppShell";
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" />
+    <style>
+        .match-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .match-ok { background: rgba(34,201,151,0.1); color: #22C997; }
+        .match-fail { background: rgba(247,111,111,0.1); color: #F76F6F; }
+        .match-pending { background: #F0F2F8; color: #8B92A9; }
+        
+        .mismatch-hint {
+            display: block;
+            font-size: 10px;
+            color: #F76F6F;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+    </style>
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Purchase Bills</h1>
+            <p class="page-subtitle">Invoice verification and 3-way matching</p>
+        </div>
+        <button class="btn-primary" onclick="ProcurementUI.openPanel('create-bill-panel')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-7-7v14"/></svg>
+            Create Bill
+        </button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="glass-card filter-bar">
+        <div class="search-group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Bill # or Invoice #..." id="bill-search">
+        </div>
+        <select class="filter-select">
+            <option>All Match Status</option>
+            <option>Matched</option>
+            <option>Mismatch</option>
+        </select>
+        <select class="filter-select">
+            <option>All Payment</option>
+            <option>Paid</option>
+            <option>Unpaid</option>
+        </select>
+    </div>
+
+    <!-- Bills Table -->
+    <div class="glass-card table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Bill Number</th>
+                    <th>GRN Reference</th>
+                    <th>Vendor</th>
+                    <th>Invoice #</th>
+                    <th>Total Amnt</th>
+                    <th>Match Status</th>
+                    <th>Payment</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bill in Model.Bills)
+                {
+                    <tr>
+                        <td class="bold">@bill.BillNumber</td>
+                        <td>@bill.GrnId</td>
+                        <td>@bill.VendorId</td>
+                        <td>
+                            <div class="primary-text">@bill.VendorInvoiceNumber</div>
+                            <div class="secondary-text">@bill.BillDate.ToString("dd MMM yyyy")</div>
+                        </td>
+                        <td class="bold">₹@bill.TotalAmount.ToString("N0")</td>
+                        <td>
+                            <div class="match-badge @(bill.MatchStatus == "Matched" ? "match-ok" : "match-fail")">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    @if(bill.MatchStatus == "Matched") { <path d="M20 6 9 17l-5-5"/> } else { <path d="M18 6 6 18M6 6l12 12"/> }
+                                </svg>
+                                @bill.MatchStatus
+                            </div>
+                            @if(bill.MatchStatus == "Mismatch") {
+                                <span class="mismatch-hint">Rate diff > 2%</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="status-pill @(bill.PaymentStatus == "Paid" ? "status-received" : "status-partial")">@bill.PaymentStatus</span>
+                        </td>
+                        <td style="text-align:right">
+                            <div class="actions-cell">
+                                <button class="btn-icon" title="View Bill"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l2 2 4-4"/></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- CREATE BILL SLIDE PANEL -->
+<div class="slide-panel" id="create-bill-panel">
+    <div class="slide-panel-header">
+        <h2>Verify & Create Bill</h2>
+        <button class="close-panel-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <form id="bill-form">
+            <div class="panel-section-title">Reference Selection</div>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Select Approved GRN</label>
+                    <select class="form-control" id="bill-grn-select">
+                        <option value="">Choose a GRN...</option>
+                        @foreach(var g in Model.ApprovedGRNs) {
+                            <option value="@g.Id">@g.GrnNumber | @g.VendorId (@g.ReceivedDate.ToString("dd MMM"))</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Invoice Number</label>
+                    <input type="text" class="form-control" name="VendorInvoiceNumber" placeholder="As per vendor invoice">
+                </div>
+                <div class="form-group">
+                    <label>Invoice Date</label>
+                    <input type="date" class="form-control" name="VendorInvoiceDate">
+                </div>
+            </div>
+
+            <div class="panel-section-title" style="margin-top:24px">3-Way Match Verification</div>
+            <div id="matching-status-live" style="background:#EEF1FE; padding:12px; border-radius:8px; margin-bottom:16px; border:1px solid rgba(79,110,247,0.1);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:13px; font-weight:600; color:#4F6EF7;">Live Match Result</span>
+                    <div class="match-badge match-pending" id="live-match-badge">Pending Input</div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto">
+                <table class="item-table" id="bill-items-table">
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th width="80">GRN Qty</th>
+                            <th width="80">Inv Qty</th>
+                            <th width="100">Rate (₹)</th>
+                            <th width="100">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Pre-filled from GRN choice -->
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:var(--color-text-muted); padding:20px;">
+                                Select a GRN to compare quantities
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="total-amount-row" style="margin-top:24px">
+                <div class="total-item">
+                    <div class="label">Invoice Total</div>
+                    <div class="value" id="bill-grand">₹0</div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost btn-cancel">Cancel</button>
+        <button class="btn-primary" id="save-bill-btn" disabled>Save & Post Bill</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/procurement.js"></script>
+    <script>
+        document.getElementById('bill-grn-select').addEventListener('change', function() {
+            if(this.value) {
+                // Mocking item pre-fill
+                const tbody = document.querySelector('#bill-items-table tbody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="bold">Blue Pigment</td>
+                        <td>500</td>
+                        <td><input type="number" class="form-control qty-input" value="500" style="height:32px; font-size:12px"></td>
+                        <td><input type="number" class="form-control rate-input" value="90" style="height:32px; font-size:12px"></td>
+                        <td class="line-total bold">₹45,000</td>
+                    </tr>
+                `;
+                document.getElementById('live-match-badge').className = 'match-badge match-ok';
+                document.getElementById('live-match-badge').textContent = 'Matched';
+                document.getElementById('save-bill-btn').disabled = false;
+                ProcurementUI.updateTotals('bill-items-table', null, null, 'bill-grand');
+
+                // Bind live checks
+                tbody.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('input', () => {
+                        ProcurementUI.updateTotals('bill-items-table', null, null, 'bill-grand');
+                        // Random mismatch simulation
+                        if(input.value > 500 || input.value < 85) {
+                            document.getElementById('live-match-badge').className = 'match-badge match-fail';
+                            document.getElementById('live-match-badge').textContent = 'Mismatch';
+                        } else {
+                            document.getElementById('live-match-badge').className = 'match-badge match-ok';
+                            document.getElementById('live-match-badge').textContent = 'Matched';
+                        }
+                    });
+                });
+            }
+        });
+
+        document.getElementById('save-bill-btn').addEventListener('click', () => {
+             const btn = document.getElementById('save-bill-btn');
+             btn.disabled = true;
+             btn.innerHTML = '<span class="spinner"></span> Saving Bill...';
+             setTimeout(() => {
+                alert('Purchase Bill created and posted to finance.');
+                ProcurementUI.closeAllPanels();
+                window.location.reload();
+             }, 1500);
+        });
+    </script>
+}

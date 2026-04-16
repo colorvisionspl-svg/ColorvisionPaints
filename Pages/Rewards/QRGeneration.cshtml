@@ -1,0 +1,248 @@
+@page
+@model ColorvisionPaintsERP.Pages.Rewards.QRGenerationModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "QR Generation";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/rewards.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">QR Code Generation</h1>
+            <p class="page-subtitle">Generate unique QR stickers for paint batches and track their scan lifecycle</p>
+        </div>
+        <button class="btn-primary" onclick="RewardsUI.openPanel('panel-generate-qr')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Generate QR Codes
+        </button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Total Generated</p>
+            <p class="value">@Model.Summary.TotalGenerated.ToString("N0")</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Scanned This Month</p>
+            <p class="value" style="color:#22C997">@Model.Summary.ScannedThisMonth</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Scan Rate</p>
+            <p class="value" style="color:#4F6EF7">@Model.Summary.ScanRatePercent.ToString("F1")%</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Points Issued MTD</p>
+            <p class="value" style="color:#F7A24F">@Model.Summary.PointsIssuedMtd.ToString("N0")</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card table-wrapper">
+        <div class="filter-bar">
+            <div class="search-group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search serial, product…" oninput="RewardsUI.filterTable('qr-table', this.value)">
+            </div>
+            <select class="filter-select" onchange="RewardsUI.filterTable('qr-table', this.value)">
+                <option value="">All Status</option>
+                <option>Unscanned</option>
+                <option>Scanned</option>
+                <option>Expired</option>
+                <option>Voided</option>
+            </select>
+            <button class="btn-ghost" style="height:36px;padding:0 14px;font-size:12px" onclick="exportQRSheet()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export PDF Sheet
+            </button>
+        </div>
+        <table class="data-table" id="qr-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all-qr" onchange="RewardsUI.toggleSelectAll('select-all-qr','row-check')"></th>
+                    <th>Serial #</th>
+                    <th>Product</th>
+                    <th>Batch</th>
+                    <th>Points</th>
+                    <th>Status</th>
+                    <th>Scanned City</th>
+                    <th>Created</th>
+                    <th>Expires</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var q in Model.QrCodes)
+                {
+                    var statusCls = q.Status switch {
+                        "Unscanned" => "qr-unscanned",
+                        "Scanned"   => "qr-scanned",
+                        "Expired"   => "qr-expired",
+                        "Voided"    => "qr-voided",
+                        _           => "qr-unscanned"
+                    };
+                    <tr>
+                        <td><input type="checkbox" class="row-check" onchange="RewardsUI.updateBulkBar()"></td>
+                        <td><span class="material-pill" style="font-family:monospace;font-size:11px">@q.SerialNumber</span></td>
+                        <td><span class="bold">@q.ProductName</span></td>
+                        <td>@q.BatchNumber</td>
+                        <td style="font-weight:700;color:#4F6EF7">@q.PointValue pts</td>
+                        <td><span class="status-pill @statusCls">@q.Status</span></td>
+                        <td>@(string.IsNullOrEmpty(q.ScanCity) ? "—" : q.ScanCity)</td>
+                        <td>@q.CreatedAt.ToString("dd MMM yy")</td>
+                        <td>@q.ExpiryDate.ToString("dd MMM yy")</td>
+                        <td class="actions-cell">
+                            <button class="btn-icon" title="Preview QR" onclick="previewQr('@q.SerialNumber')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </button>
+                            @if (q.Status == "Unscanned")
+                            {
+                                <button class="btn-icon" title="Void" onclick="voidCode('@q.SerialNumber')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F76F6F" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Bulk Action Bar -->
+<div id="bulk-action-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(26,29,46,0.95);backdrop-filter:blur(12px);border-radius:14px;padding:14px 20px;color:#fff;display:none;align-items:center;gap:16px;z-index:200">
+    <span style="font-size:13px"><span id="selected-count">0</span> selected</span>
+    <button class="btn-primary" style="height:36px;font-size:12px" onclick="bulkVoid()">Void Selected</button>
+    <button class="btn-ghost" style="height:36px;font-size:12px;color:#fff;border-color:rgba(255,255,255,0.2)" onclick="exportSelectedPdf()">Export PDF</button>
+</div>
+
+<!-- OVERLAY -->
+<div class="panel-overlay" onclick="RewardsUI.closeAll()"></div>
+
+<!-- SLIDE PANEL: GENERATE QR CODES -->
+<div class="slide-panel" id="panel-generate-qr">
+    <div class="slide-panel-header">
+        <h2>Generate QR Codes for New Batch</h2>
+        <button class="close-panel-btn" onclick="RewardsUI.closeAll()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <p class="panel-section-title" style="margin-top:0">Batch Information</p>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>Product Variant *</label>
+                <select class="form-control" id="qr-product">
+                    <option value="">Select product…</option>
+                    <option value="P1">InteriorEmu Pro — Arctic White</option>
+                    <option value="P2">Exterior Shield XT — Ocean Blue</option>
+                    <option value="P3">Steel Coat Pro — Silver Grey</option>
+                    <option value="P4">Primer Plus — White Base</option>
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label>Batch Number *</label>
+                <select class="form-control" id="qr-batch">
+                    <option>PRD-BATCH-0001</option>
+                    <option>PRD-BATCH-0002</option>
+                    <option>PRD-BATCH-0003</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Manufacturing Date *</label>
+                <input type="date" class="form-control" id="qr-mfg-date" value="@DateTime.Today.ToString("yyyy-MM-dd")" onchange="calcExpiry()">
+            </div>
+            <div class="form-group">
+                <label>Expiry Date (auto)</label>
+                <input type="text" class="form-control" id="qr-expiry" disabled placeholder="Auto-calculated">
+            </div>
+            <div class="form-group">
+                <label>Product Category (for points)</label>
+                <select class="form-control" id="qr-category" onchange="RewardsUI.onCategoryChange(this)">
+                    <option value="interior">Interior Emulsion — 15 pts</option>
+                    <option value="exterior">Exterior Emulsion — 25 pts</option>
+                    <option value="waterproof">Waterproofing — 40 pts</option>
+                    <option value="primer">Primer — 10 pts</option>
+                    <option value="economy">Economy / Distemper — 5 pts</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Points Per Scan</label>
+                <input type="number" class="form-control" id="qr-point-value" value="15">
+            </div>
+            <div class="form-group full-width">
+                <label>Quantity to Generate *</label>
+                <input type="number" class="form-control" id="qr-quantity" placeholder="e.g. 500" min="1" max="10000">
+                <span style="font-size:11px;color:var(--color-text-muted);margin-top:4px;display:block">Max 10,000 per generation. Each code will be unique.</span>
+            </div>
+        </div>
+
+        <div class="glass-card" style="margin-top:16px;padding:16px;background:rgba(79,110,247,0.05);border:1.5px solid rgba(79,110,247,0.15)">
+            <p style="font-size:13px;font-weight:700;color:#4F6EF7;margin:0 0 6px">Generation Preview</p>
+            <p style="font-size:12px;color:var(--color-text-muted);margin:0">
+                Next serial: <strong style="font-family:monospace;color:var(--color-text-primary)">CV-QR-@((Model.QrCodes.Count + 1).ToString("D8"))</strong><br>
+                to <strong style="font-family:monospace;color:var(--color-text-primary)" id="last-serial">—</strong>
+            </p>
+        </div>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="RewardsUI.closeAll()">Cancel</button>
+        <button class="btn-primary" id="btn-do-generate" onclick="doGenerateQR()">Generate QR Codes</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/rewards-admin.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            RewardsUI.initClosers();
+            calcExpiry();
+        });
+
+        function calcExpiry() {
+            const mfg = document.getElementById('qr-mfg-date')?.value;
+            if (!mfg) return;
+            const expDate = new Date(mfg);
+            expDate.setFullYear(expDate.getFullYear() + 1);
+            document.getElementById('qr-expiry').value = expDate.toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'});
+        }
+
+        function doGenerateQR() {
+            const qty = parseInt(document.getElementById('qr-quantity')?.value);
+            if (!qty || qty < 1) { alert('Enter a valid quantity (1–10,000).'); return; }
+            const product = document.getElementById('qr-product')?.value;
+            if (!product) { alert('Select a product variant.'); return; }
+            const btn = document.getElementById('btn-do-generate');
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating...';
+            setTimeout(() => {
+                alert(`✅ ${qty} QR codes generated successfully!\nFirst serial: CV-QR-@((Model.QrCodes.Count + 1).ToString("D8"))\nPDF sticker sheet ready for download.`);
+                btn.disabled = false;
+                btn.textContent = 'Generate QR Codes';
+                RewardsUI.closeAll();
+            }, 1800);
+        }
+
+        function voidCode(serial) {
+            if (confirm(`Void QR code ${serial}? This cannot be undone.`)) {
+                alert(`QR code ${serial} voided.`);
+            }
+        }
+
+        function previewQr(serial) {
+            const url = `/scan/${serial}`;
+            alert(`QR URL for ${serial}:\n${location.origin}${url}\n\n(In production, a popup with QR image will appear here)`);
+        }
+
+        function exportQRSheet() {
+            alert('PDF sticker sheet export initiated. The file will download shortly.\n(4 QR codes per row, print-ready)');
+        }
+
+        function bulkVoid() { if (confirm('Void all selected QR codes?')) alert('Selected codes voided.'); }
+        function exportSelectedPdf() { alert('Exporting selected codes as PDF…'); }
+    </script>
+}

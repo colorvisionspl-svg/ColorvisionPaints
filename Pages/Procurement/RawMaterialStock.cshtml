@@ -1,0 +1,256 @@
+@page
+@model ColorvisionPaintsERP.Pages.Procurement.RawMaterialStockModel
+@{
+    ViewData["Title"] = "Raw Material Stock";
+    Layout = "_AppShell";
+    
+    var expiringCount = Model.StockItems.Count(s => (s.ExpiryDate - DateTime.Now).TotalDays < 30);
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" />
+    <style>
+        .expiry-banner {
+            background: rgba(247, 111, 111, 0.15);
+            border: 1px solid rgba(247, 111, 111, 0.3);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            color: #F76F6F;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+        }
+        .stock-level { font-weight: 700; }
+        .level-low { color: #F76F6F; }
+        .level-reorder { color: #F7A24F; }
+        .level-ok { color: #22C997; }
+
+        .reorder-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #FFF3E0;
+            color: #F7A24F;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .reorder-badge:hover { background: #F7A24F; color: #fff; }
+    </style>
+}
+
+<div class="page-container">
+    @if (expiringCount > 0)
+    {
+        <div class="expiry-banner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <span>@expiringCount batches are expiring within 30 days! <a href="#" style="color:inherit; text-decoration:underline">View Batches</a></span>
+        </div>
+    }
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Raw Material Stock</h1>
+            <p class="page-subtitle">Real-time inventory levels and warehouse tracking</p>
+        </div>
+        <div class="actions">
+            <button class="btn-ghost" onclick="ProcurementUI.openPanel('adjust-stock-panel')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Stock Adjustment
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Row -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <div class="label">Total SKUs</div>
+            <div class="value">@Model.Materials.Count</div>
+        </div>
+        <div class="glass-card summary-card">
+            <div class="label">Stock Value</div>
+            <div class="value">₹12.4L</div>
+        </div>
+        <div class="glass-card summary-card">
+            <div class="label">Expiring Batches</div>
+            <div class="value" style="color:#F76F6F">@expiringCount</div>
+        </div>
+        <div class="glass-card summary-card">
+            <div class="label">Critical Alerts</div>
+            <div class="value" style="color:#F7A24F">@Model.Materials.Count(m => Model.StockItems.Where(s => s.MaterialName == m.Name).Sum(s => s.Quantity) <= m.ReorderLevel)</div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="glass-card filter-bar">
+        <div class="search-group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Filter by material or batch..." id="stock-search">
+        </div>
+        <select class="filter-select">
+            <option>All Categories</option>
+            <option>Pigment</option>
+            <option>Resin</option>
+            <option>Additive</option>
+        </select>
+        <select class="filter-select">
+            <option>Warehouse Zone: All</option>
+            <option>Main Zone</option>
+            <option>Hazardous</option>
+        </select>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="glass-card table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Category</th>
+                    <th>Total Stock</th>
+                    <th>Available</th>
+                    <th>Next Expiry</th>
+                    <th>Warehouse</th>
+                    <th>Status</th>
+                    <th>Alerts</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model.Materials)
+                {
+                    var stock = Model.StockItems.Where(s => s.MaterialName == m.Name).ToList();
+                    var totalQty = stock.Sum(s => s.Quantity);
+                    var available = stock.Where(s => s.Status == "Approved").Sum(s => s.Quantity);
+                    var nextExpiry = stock.OrderBy(s => s.ExpiryDate).FirstOrDefault();
+                    
+                    var levelClass = totalQty <= m.SafetyStock ? "level-low" : (totalQty <= m.ReorderLevel ? "level-reorder" : "level-ok");
+
+                    <tr>
+                        <td class="bold">@m.Name</td>
+                        <td><span class="material-pill">@m.Category</span></td>
+                        <td class="stock-level @levelClass">@totalQty @(stock.FirstOrDefault()?.Unit ?? "kg")</td>
+                        <td class="bold">@available</td>
+                        <td>
+                            @if(nextExpiry != null) {
+                                <div class="primary-text @((nextExpiry.ExpiryDate - DateTime.Now).TotalDays < 30 ? "level-low" : "")">
+                                    @nextExpiry.ExpiryDate.ToString("dd MMM yyyy")
+                                </div>
+                                <div class="secondary-text">Batch: @nextExpiry.BatchNumber</div>
+                            } else {
+                                <span class="secondary-text">No Stock</span>
+                            }
+                        </td>
+                        <td>@(stock.FirstOrDefault()?.WarehouseZone ?? "N/A")</td>
+                        <td>
+                             <span class="status-pill @(totalQty > 0 ? "status-received" : "status-draft")">
+                                 @(totalQty > 0 ? "In Stock" : "Out of Stock")
+                             </span>
+                        </td>
+                        <td>
+                            @if(totalQty <= m.ReorderLevel) {
+                                <div class="reorder-badge" title="Quantity below reorder level. Click to create PO.">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                                    Reorder
+                                </div>
+                            }
+                        </td>
+                        <td style="text-align:right">
+                             <div class="actions-cell">
+                                <button class="btn-icon" title="Batch History" onclick="ProcurementUI.openPanel('batch-detail-panel')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- STOCK ADJUSTMENT PANEL -->
+<div class="slide-panel" id="adjust-stock-panel">
+    <div class="slide-panel-header">
+        <h2>Stock Adjustment</h2>
+        <button class="close-panel-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <form>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Select Material</label>
+                    <select class="form-control">
+                        @foreach(var m in Model.Materials) {
+                            <option>@m.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Adjustment Type</label>
+                    <select class="form-control">
+                        <option>Reduce (Damage/Loss)</option>
+                        <option>Add (Correction)</option>
+                        <option>Write-off (Expired)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity</label>
+                    <input type="number" class="form-control" value="0">
+                </div>
+                <div class="form-group full-width">
+                    <label>Reason / Remarks</label>
+                    <textarea class="form-control" style="height:80px"></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost btn-cancel">Cancel</button>
+        <button class="btn-primary" onclick="alert('Stock adjustment logged successfully.'); ProcurementUI.closeAllPanels();">Save Adjustment</button>
+    </div>
+</div>
+
+<!-- BATCH DETAIL PANEL -->
+<div class="slide-panel" id="batch-detail-panel">
+    <div class="slide-panel-header">
+        <h2>Batch History — Blue Pigment</h2>
+        <button class="close-panel-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div class="glass-card" style="padding:12px; border:1px solid rgba(0,0,0,0.05)">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span class="bold">Batch: B-992</span>
+                    <span class="status-pill status-received">Approved</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12px;">
+                    <div><span class="secondary-text">Qty:</span> 1,200 kg</div>
+                    <div><span class="secondary-text">Expiry:</span> 01 May 2026</div>
+                </div>
+            </div>
+             <div class="glass-card" style="padding:12px; border:1px solid rgba(0,0,0,0.05)">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <span class="bold">Batch: B-771</span>
+                    <span class="status-pill status-cancelled">Expired</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:12px;">
+                    <div><span class="secondary-text">Qty:</span> 50 kg</div>
+                    <div><span class="secondary-text">Expiry:</span> 15 Mar 2026</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/procurement.js"></script>
+}

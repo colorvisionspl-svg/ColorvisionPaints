@@ -1,0 +1,271 @@
+@{
+    Layout = "_Layout";
+    var userName = User.Identity?.Name ?? "Admin User";
+    var userRole = User.FindFirst("Role")?.Value ?? "Administrator";
+    var initials = userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : (userName.Length == 1 ? userName.ToUpper() : "CV");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/appshell.css" />
+    @RenderSection("PageStyles", required: false)
+}
+
+<div id="app-root">
+
+    <!-- ═══════════════════════════════════════════════
+         ZONE 1 — TOPBAR
+         ═══════════════════════════════════════════════ -->
+    <header class="topbar" role="banner">
+
+        <!-- LEFT: Logo -->
+        <div class="topbar-left">
+            <div class="topbar-logo-icon" aria-label="ColorVision Logo">
+                <span>CV</span>
+            </div>
+            <div class="topbar-logo-text">
+                <span class="topbar-logo-name">ColorVision</span>
+                <span class="topbar-logo-sub">Paints ERP</span>
+            </div>
+        </div>
+
+        <!-- CENTER: Search -->
+        <div class="topbar-center">
+            <div class="topbar-search">
+                <span class="topbar-search-icon" aria-hidden="true">
+                    <!-- Search icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                </span>
+                <input type="text"
+                       id="global-search"
+                       placeholder="Search modules, documents, or data..."
+                       aria-label="Global search"
+                       autocomplete="off" />
+            </div>
+        </div>
+
+        <!-- RIGHT: Company Selector · Bell · Settings · Avatar · User Info -->
+        <div class="topbar-right">
+
+            <!-- Company Selector -->
+            <button class="topbar-company" id="company-selector" aria-label="Company selector">
+                <span>ColorVision Paints</span>
+                <!-- ChevronDown -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+
+            <!-- Bell -->
+            <button class="btn-icon-topbar" id="notif-btn" aria-label="Notifications">
+                <!-- Bell icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+            </button>
+
+            <!-- Settings -->
+            <button class="btn-icon-topbar" id="settings-btn" aria-label="Settings">
+                <!-- Settings icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+
+            <!-- Divider -->
+            <div class="topbar-divider" aria-hidden="true"></div>
+
+            <!-- Avatar + User Info (clickable, triggers dropdown) -->
+            <div class="topbar-user" id="topbar-user" role="button" tabindex="0" aria-expanded="false" aria-haspopup="true">
+                <div class="topbar-avatar" aria-hidden="true">@initials</div>
+                <div class="topbar-user-info">
+                    <span class="topbar-user-welcome">Welcome back,</span>
+                    <span class="topbar-user-name">
+                        <span id="user-display-name">@userName</span>
+                        <!-- ChevronDown -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- User Dropdown (absolutely positioned) -->
+        <div class="user-dropdown" id="user-dropdown" role="menu">
+            <div class="user-dropdown-header">
+                <div class="name">@userName</div>
+                <div class="role">@userRole</div>
+            </div>
+            <button class="user-dropdown-item" role="menuitem">
+                <!-- User icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                Profile
+            </button>
+            <button class="user-dropdown-item" role="menuitem">
+                <!-- Settings icon small -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Settings
+            </button>
+            <form asp-controller="Auth" asp-action="Logout" method="post" style="margin:0;padding:0;">
+                <button type="submit" class="user-dropdown-item danger" role="menuitem">
+                    <!-- Log out icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                </button>
+            </form>
+        </div>
+
+    </header>
+
+    <!-- ═══════════════════════════════════════════════
+         ZONE 2 — MODULE SUBNAV
+         ═══════════════════════════════════════════════ -->
+    <nav class="module-subnav" id="module-subnav" role="navigation" aria-label="Module navigation">
+
+        <!-- Dashboard -->
+        <button class="module-tab active" data-module="dashboard" id="tab-dashboard" aria-selected="true">
+            <!-- LayoutDashboard icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Dashboard
+        </button>
+
+        <!-- Procurement -->
+        <button class="module-tab" data-module="procurement" id="tab-procurement" aria-selected="false">
+            <!-- ShoppingCart icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            Procurement
+        </button>
+
+        <!-- Inventory -->
+        <button class="module-tab" data-module="inventory" id="tab-inventory" aria-selected="false">
+            <!-- Package icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+            Inventory
+        </button>
+
+        <!-- Manufacturing -->
+        <button class="module-tab" data-module="manufacturing" id="tab-manufacturing" aria-selected="false">
+            <!-- Factory icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/>
+            </svg>
+            Manufacturing
+        </button>
+
+        <!-- Dealers -->
+        <button class="module-tab" data-module="dealers" id="tab-dealers" aria-selected="false">
+            <!-- Users icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Dealers
+        </button>
+
+        <!-- Sales -->
+        <button class="module-tab" data-module="sales" id="tab-sales" aria-selected="false">
+            <!-- TrendingUp icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+            </svg>
+            Sales
+        </button>
+
+        <!-- Field Team -->
+        <button class="module-tab" data-module="fieldteam" id="tab-fieldteam" aria-selected="false">
+            <!-- MapPin icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            Field Team
+        </button>
+
+        <!-- QR Rewards -->
+        <button class="module-tab" data-module="rewards" id="tab-rewards" aria-selected="false">
+            <!-- QrCode icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/>
+            </svg>
+            QR Rewards
+        </button>
+
+        <!-- Finance -->
+        <button class="module-tab" data-module="finance" id="tab-finance" aria-selected="false">
+            <!-- CreditCard icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Finance
+        </button>
+
+        <!-- Settings -->
+        <button class="module-tab" data-module="settings" id="tab-settings" aria-selected="false">
+            <!-- Settings icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            Settings
+        </button>
+
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════
+         ZONE 3 — BODY (Sidebar + Content)
+         ═══════════════════════════════════════════════ -->
+
+    <!-- Background image layer — behind content, not sidebar -->
+    <div class="content-bg" aria-hidden="true"></div>
+
+    <!-- Sidebar mobile overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="main-body">
+
+        <!-- ── SIDEBAR ── -->
+        <aside class="sidebar" id="sidebar" role="complementary">
+
+            <!-- Sidebar header: Module title + filter -->
+            <div class="sidebar-header">
+                <span class="sidebar-module-title" id="sidebar-module-title">Dashboard</span>
+                <button class="sidebar-filter-btn" id="sidebar-filter-btn" aria-label="Filter">
+                    <!-- Filter icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Sidebar nav items — rendered by JS from module data -->
+            <nav class="sidebar-nav" id="sidebar-nav" role="navigation" aria-label="Module sub-navigation">
+                <!-- Items injected by appshell.js -->
+            </nav>
+
+        </aside>
+
+        <!-- ── MAIN CONTENT ── -->
+        <main class="main-content" id="main-content" role="main">
+            @RenderBody()
+        </main>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/js/appshell.js"></script>
+    @RenderSection("PageScripts", required: false)
+}

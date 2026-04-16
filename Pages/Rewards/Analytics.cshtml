@@ -1,0 +1,127 @@
+@page
+@model ColorvisionPaintsERP.Pages.Rewards.AnalyticsModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Rewards Analytics";
+    var topCities = new[] { ("Mumbai",342), ("Pune",218), ("Delhi",195), ("Chennai",167), ("Kolkata",134), ("Bangalore",122), ("Hyderabad",98), ("Ahmedabad",87), ("Jaipur",64), ("Surat",52) };
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/rewards.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Rewards Analytics</h1>
+            <p class="page-subtitle">Scan volumes, painter leaderboard, product preferences, and geographic heatmap</p>
+        </div>
+        <div class="actions">
+            <select class="filter-select" style="height:38px">
+                <option>Last 30 days</option>
+                <option>Last 7 days</option>
+                <option>This Month</option>
+                <option>This Year</option>
+            </select>
+            <button class="btn-ghost" style="height:38px">Export Report</button>
+        </div>
+    </div>
+
+    <!-- Row 1: Scan Volume + Product Pie -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px">
+        <div class="glass-card">
+            <p style="font-size:14px;font-weight:700;margin:0 0 16px">Scan Volume — Last 30 Days</p>
+            <div class="chart-placeholder" id="scan-chart" style="min-height:200px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4F6EF7" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span>Scan volume line chart (Chart.js)</span>
+            </div>
+        </div>
+        <div class="glass-card">
+            <p style="font-size:14px;font-weight:700;margin:0 0 16px">Product Preference</p>
+            <div class="chart-placeholder" id="product-pie" style="min-height:200px">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7C6FF7" stroke-width="1.5"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                <span>Product pie chart</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Top Painters + City Leaderboard -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <!-- Top 10 Painters -->
+        <div class="glass-card">
+            <p style="font-size:14px;font-weight:700;margin:0 0 16px">Top 10 Painters by Points Earned</p>
+            @for (int i = 0; i < Model.TopPainters.Count; i++)
+            {
+                var p = Model.TopPainters[i];
+                var pct = Model.TopPainters.Count > 0 ? p.TotalPointsEarned / Model.TopPainters[0].TotalPointsEarned * 100 : 0;
+                var tierCls = p.Tier.ToLower();
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                    <span style="width:20px;text-align:center;font-size:13px;font-weight:700;color:var(--color-text-muted)">@(i+1)</span>
+                    <div style="flex:1">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+                            <span style="font-size:12px;font-weight:700">@p.Name</span>
+                            <span class="tier-badge tier-@tierCls" style="font-size:9px;padding:1px 7px">@p.Tier</span>
+                        </div>
+                        <div class="tier-progress-track" style="height:5px">
+                            <div class="tier-progress-fill" style="width:@pct.ToString("F0")%"></div>
+                        </div>
+                    </div>
+                    <span style="font-size:12px;font-weight:700;color:#4F6EF7;min-width:65px;text-align:right">@p.TotalPointsEarned.ToString("N0") pts</span>
+                </div>
+            }
+        </div>
+
+        <!-- City Leaderboard -->
+        <div class="glass-card">
+            <p style="font-size:14px;font-weight:700;margin:0 0 16px">Top 10 Cities by Scan Volume</p>
+            <table class="data-table" style="font-size:12px">
+                <thead>
+                    <tr>
+                        <th style="width:32px">#</th>
+                        <th>City</th>
+                        <th style="text-align:right">Scans</th>
+                        <th style="text-align:right">Share</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ var totalScans = topCities.Sum(c => c.Item2); }
+                    @for (int i = 0; i < topCities.Length; i++)
+                    {
+                        var city = topCities[i];
+                        var sharePct = totalScans > 0 ? city.Item2 * 100.0 / totalScans : 0;
+                        var medal = i switch { 0 => "🥇", 1 => "🥈", 2 => "🥉", _ => $"{i+1}" };
+                        <tr>
+                            <td style="text-align:center">@medal</td>
+                            <td style="font-weight:600">@city.Item1</td>
+                            <td style="text-align:right;font-weight:700;color:#4F6EF7">@city.Item2</td>
+                            <td style="text-align:right;color:var(--color-text-muted)">@sharePct.ToString("F1")%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Geographic Map Placeholder -->
+    <div class="glass-card" style="padding:20px">
+        <p style="font-size:14px;font-weight:700;margin:0 0 16px">Geographic Scan Distribution</p>
+        <div class="chart-placeholder" style="min-height:300px;position:relative">
+            <div style="text-align:center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4F6EF7" stroke-width="1.5"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+                <p style="margin:8px 0 4px;font-size:14px;font-weight:700;color:var(--color-text-primary)">India Heatmap</p>
+                <p style="font-size:12px;color:var(--color-text-muted);margin:0">Scan bubble map — city size = scan count, color = tier distribution</p>
+                <div style="display:flex;justify-content:center;gap:16px;margin-top:16px">
+                    @foreach (var city in topCities.Take(5))
+                    {
+                        <div style="text-align:center">
+                            <div style="width:@(Math.Max(24,city.Item2/10))px;height:@(Math.Max(24,city.Item2/10))px;border-radius:50%;background:rgba(79,110,247,0.2);border:2px solid #4F6EF7;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:10px;font-weight:700;color:#4F6EF7">
+                                @city.Item2
+                            </div>
+                            <span style="font-size:10px;color:var(--color-text-muted)">@city.Item1</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

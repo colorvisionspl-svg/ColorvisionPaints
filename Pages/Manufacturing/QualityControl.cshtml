@@ -1,0 +1,254 @@
+@page
+@model ColorvisionPaintsERP.Pages.Manufacturing.QualityControlModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Quality Control";
+    var pending = Model.Inspections.Count(i => string.IsNullOrEmpty(i.OverallResult));
+    var passed  = Model.Inspections.Count(i => i.OverallResult == "Pass");
+    var failed  = Model.Inspections.Count(i => i.OverallResult == "Fail");
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/manufacturing.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Quality Control</h1>
+            <p class="page-subtitle">Inspect production batches, record test results, and generate Certificates of Analysis</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Pending Inspection</p>
+            <p class="value" style="color:#7C6FF7">@pending</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Passed</p>
+            <p class="value" style="color:#22C997">@passed</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Failed</p>
+            <p class="value" style="color:#F76F6F">@failed</p>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="glass-card" style="padding:0 0 0 4px">
+        <div style="display:flex;gap:4px;padding:10px 16px;border-bottom:1px solid rgba(0,0,0,0.05)">
+            <button class="btn-ghost qc-tab active-tab" style="height:34px;font-size:13px" onclick="filterQC('all',this)">All</button>
+            <button class="btn-ghost qc-tab" style="height:34px;font-size:13px" onclick="filterQC('pending',this)">Pending</button>
+            <button class="btn-ghost qc-tab" style="height:34px;font-size:13px" onclick="filterQC('pass',this)">Passed</button>
+            <button class="btn-ghost qc-tab" style="height:34px;font-size:13px" onclick="filterQC('fail',this)">Failed</button>
+        </div>
+
+        <table class="data-table" id="qc-table">
+            <thead>
+                <tr>
+                    <th>Batch #</th>
+                    <th>Product</th>
+                    <th>Production Order</th>
+                    <th>Yield (kg)</th>
+                    <th>Inspector</th>
+                    <th>Date</th>
+                    <th>Overall Result</th>
+                    <th>CoA</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Inspections)
+                {
+                    var resultCls = i.OverallResult switch {
+                        "Pass" => "status-passed",
+                        "Fail" => "status-failed",
+                        _      => "status-qc-pending"
+                    };
+                    var resultLabel = string.IsNullOrEmpty(i.OverallResult) ? "Pending" : i.OverallResult;
+                    <tr data-result="@(string.IsNullOrEmpty(i.OverallResult) ? "pending" : i.OverallResult.ToLower())">
+                        <td><span class="material-pill">@i.BatchNumber</span></td>
+                        <td><span class="bold">@i.ProductName</span><br><span class="secondary-text">@i.ShadeName</span></td>
+                        <td>@i.ProductionOrderId</td>
+                        <td>@i.YieldKg.ToString("N0") kg</td>
+                        <td>@(string.IsNullOrEmpty(i.InspectorName) ? "—" : i.InspectorName)</td>
+                        <td>@i.InspectionDate.ToString("dd MMM yyyy")</td>
+                        <td><span class="status-pill @resultCls">@resultLabel</span></td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(i.CoaUrl))
+                            {
+                                <a href="@i.CoaUrl" class="btn-ghost" style="height:28px;font-size:12px;padding:0 10px">Download CoA</a>
+                            }
+                            else { <span class="secondary-text">—</span> }
+                        </td>
+                        <td class="actions-cell">
+                            @if (string.IsNullOrEmpty(i.OverallResult))
+                            {
+                                <button class="btn-primary" style="height:30px;font-size:12px;padding:0 12px"
+                                        onclick="openQCForm('@i.Id', '@i.BatchNumber', '@i.ProductName', '@i.YieldKg')">
+                                    Inspect
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-icon" title="View" onclick="openQCForm('@i.Id','@i.BatchNumber','@i.ProductName','@i.YieldKg')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="panel-overlay" onclick="MfgUI.closeAllPanels()"></div>
+
+<!-- SLIDE PANEL: QC INSPECTION FORM -->
+<div class="slide-panel" id="panel-qc-form" style="width:580px">
+    <div class="slide-panel-header">
+        <h2>QC Inspection</h2>
+        <button class="close-panel-btn" onclick="MfgUI.closeAllPanels()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+
+        <!-- Batch Info (read-only) -->
+        <p class="panel-section-title" style="margin-top:0">Batch Information</p>
+        <div class="form-grid" style="row-gap:8px">
+            <div class="form-group">
+                <label>Batch #</label>
+                <input type="text" class="form-control" id="qc-batch-number" disabled>
+            </div>
+            <div class="form-group">
+                <label>Yield (kg)</label>
+                <input type="text" class="form-control" id="qc-yield-kg" disabled>
+            </div>
+            <div class="form-group full-width">
+                <label>Product</label>
+                <input type="text" class="form-control" id="qc-product-name" disabled>
+            </div>
+        </div>
+
+        <!-- Overall Banner -->
+        <div class="qc-overall-banner" id="qc-overall-banner">
+            <span>Enter all test values to see overall result</span>
+        </div>
+
+        <!-- Test Results -->
+        <p class="panel-section-title">Test Results</p>
+        <div id="qc-test-container">
+            <!-- Emulsion standard tests -->
+            <div class="qc-test-row" data-min="3000" data-max="4000">
+                <span class="qc-test-name">Viscosity</span>
+                <span class="qc-target">3000–4000 cP</span>
+                <input type="number" class="form-control qc-actual-input" placeholder="Actual" style="height:34px" oninput="MfgUI.evaluateQcRow(this)">
+                <span style="font-size:11px;color:var(--color-text-muted)">cP</span>
+                <span class="qc-result-badge">—</span>
+                <span></span>
+            </div>
+            <div class="qc-test-row" data-min="0" data-max="1.0">
+                <span class="qc-test-name">Color ΔE</span>
+                <span class="qc-target">&lt; 1.0 ΔE</span>
+                <input type="number" class="form-control qc-actual-input" placeholder="Actual" step="0.01" style="height:34px" oninput="MfgUI.evaluateQcRow(this)">
+                <span style="font-size:11px;color:var(--color-text-muted)">ΔE</span>
+                <span class="qc-result-badge">—</span>
+                <span></span>
+            </div>
+            <div class="qc-test-row" data-min="85" data-max="95">
+                <span class="qc-test-name">Gloss</span>
+                <span class="qc-target">85–95 GU</span>
+                <input type="number" class="form-control qc-actual-input" placeholder="Actual" style="height:34px" oninput="MfgUI.evaluateQcRow(this)">
+                <span style="font-size:11px;color:var(--color-text-muted)">GU</span>
+                <span class="qc-result-badge">—</span>
+                <span></span>
+            </div>
+            <div class="qc-test-row" data-min="1.35" data-max="1.42">
+                <span class="qc-test-name">Density</span>
+                <span class="qc-target">1.35–1.42 g/ml</span>
+                <input type="number" class="form-control qc-actual-input" placeholder="Actual" step="0.01" style="height:34px" oninput="MfgUI.evaluateQcRow(this)">
+                <span style="font-size:11px;color:var(--color-text-muted)">g/ml</span>
+                <span class="qc-result-badge">—</span>
+                <span></span>
+            </div>
+            <div class="qc-test-row" data-min="8.5" data-max="9.5">
+                <span class="qc-test-name">pH</span>
+                <span class="qc-target">8.5–9.5</span>
+                <input type="number" class="form-control qc-actual-input" placeholder="Actual" step="0.1" style="height:34px" oninput="MfgUI.evaluateQcRow(this)">
+                <span style="font-size:11px;color:var(--color-text-muted)">pH</span>
+                <span class="qc-result-badge">—</span>
+                <span></span>
+            </div>
+        </div>
+
+        <!-- Inspector & Remarks -->
+        <div style="margin-top:16px">
+            <p class="panel-section-title">Inspector Sign-off</p>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>Inspector Name *</label>
+                    <input type="text" class="form-control" id="qc-inspector-name" placeholder="Type full name…">
+                </div>
+                <div class="form-group full-width">
+                    <label>Remarks</label>
+                    <textarea class="form-control" id="qc-remarks" rows="3" placeholder="Any additional observations…"></textarea>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="MfgUI.closeAllPanels()">Cancel</button>
+        <button class="btn-primary" id="submit-qc-btn" onclick="submitQCInspection()" disabled>Submit QC</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/manufacturing.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            MfgUI.initPanelClosers();
+            MfgUI.initQcTests();
+        });
+
+        function openQCForm(id, batchNum, product, yieldKg) {
+            document.getElementById('qc-batch-number').value = batchNum;
+            document.getElementById('qc-product-name').value = product;
+            document.getElementById('qc-yield-kg').value     = yieldKg + ' kg';
+            MfgUI.openPanel('panel-qc-form');
+        }
+
+        function filterQC(filter, btn) {
+            document.querySelectorAll('.qc-tab').forEach(b => b.classList.remove('active-tab'));
+            btn.classList.add('active-tab');
+            document.querySelectorAll('#qc-table tbody tr').forEach(tr => {
+                const res = tr.dataset.result;
+                const show = filter === 'all' || res === filter;
+                tr.style.display = show ? '' : 'none';
+            });
+        }
+
+        function submitQCInspection() {
+            const name = document.getElementById('qc-inspector-name')?.value;
+            if (!name) { alert('Please enter inspector name.'); return; }
+            const banner = document.getElementById('qc-overall-banner');
+            const passed = banner?.classList.contains('pass');
+
+            if (passed) {
+                alert('✅ QC PASSED! Batch transferred to Finished Goods inventory.\nCoA will be generated and uploaded.');
+            } else {
+                const decision = confirm('❌ QC FAILED.\n\nClick OK to send for Rework, or Cancel to mark as Disposed.');
+                alert(decision ? 'Batch sent for Rework!' : 'Batch marked as Disposed.');
+            }
+            MfgUI.closeAllPanels();
+        }
+    </script>
+}

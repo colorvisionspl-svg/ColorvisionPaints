@@ -1,0 +1,15 @@
+@{
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/login.css" />
+}
+
+<div class="login-page">
+    @RenderBody()
+</div>
+
+@section Scripts {
+    @RenderSection("PageScripts", required: false)
+}

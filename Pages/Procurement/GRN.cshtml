@@ -1,0 +1,180 @@
+@page
+@model ColorvisionPaintsERP.Pages.Procurement.GRNModel
+@{
+    ViewData["Title"] = "GRN Management";
+    Layout = "_AppShell";
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" />
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Goods Receipt Notes (GRN)</h1>
+            <p class="page-subtitle">Track inward material receipts and quality control status</p>
+        </div>
+        <div class="actions">
+            <!-- GRN usually created from PO view, but providing a search/view focus here -->
+            <button class="btn-ghost" onclick="alert('Navigate to Purchase Orders to create GRN from a Sent PO')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                New Receipt Instructions
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="glass-card filter-bar">
+        <div class="search-group">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" placeholder="Search by GRN # or PO #..." id="grn-search">
+        </div>
+        <select class="filter-select">
+            <option>All QC Status</option>
+            <option>QC Pending</option>
+            <option>QC Approved</option>
+            <option>QC Rejected</option>
+        </select>
+        <input type="date" class="filter-select" title="Received Date">
+    </div>
+
+    <!-- GRN Table -->
+    <div class="glass-card table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>GRN #</th>
+                    <th>PO #</th>
+                    <th>Vendor</th>
+                    <th>Received Date</th>
+                    <th>Items</th>
+                    <th>QC Status</th>
+                    <th style="text-align:right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var grn in Model.GRNs)
+                {
+                    <tr>
+                        <td class="bold">@grn.GrnNumber</td>
+                        <td>@grn.PoNumber</td>
+                        <td>@grn.VendorId</td>
+                        <td>@grn.ReceivedDate.ToString("dd MMM yyyy")</td>
+                        <td>
+                            <div class="secondary-text">@grn.Items.Count items</div>
+                            @if(grn.Items.Any()) {
+                                <div class="primary-text" style="font-size:12px; font-weight:600">@grn.Items[0].MaterialName</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="status-pill @(grn.Status == "QC Approved" ? "status-received" : (grn.Status == "QC Rejected" ? "status-cancelled" : "status-partial"))">
+                                @grn.Status
+                            </span>
+                        </td>
+                        <td style="text-align:right">
+                            <div class="actions-cell">
+                                <button class="btn-icon" title="View Details" onclick="viewGrnDetails('@grn.GrnNumber')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
+                                @if(grn.Status == "QC Pending") {
+                                    <button class="btn-icon" style="color:var(--color-accent)" title="QC Approval" onclick="showQcApproval('@grn.GrnNumber')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- GRN DETAIL / QC APPROVAL PANEL -->
+<div class="slide-panel" id="grn-detail-panel">
+    <div class="slide-panel-header">
+        <h2 id="grn-panel-title">GRN Details</h2>
+        <button class="close-panel-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <div id="grn-info-header" style="background:rgba(0,0,0,0.03); padding:16px; border-radius:12px; margin-bottom:24px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--color-text-muted)">PO Reference</label>
+                    <div class="bold" id="detail-po-ref">CV/PO/2025-26/0005</div>
+                </div>
+                <div>
+                    <label style="font-size:11px; text-transform:uppercase; color:var(--color-text-muted)">Received Date</label>
+                    <div class="bold" id="detail-date">16 Apr 2026</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-section-title">Received Items & Batches</div>
+        <div style="display:flex; flex-direction:column; gap:12px;" id="grn-items-list">
+            <!-- Dynamic Item Cards -->
+            <div class="glass-card" style="padding:16px; border:1px solid rgba(0,0,0,0.05);">
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+                    <div>
+                        <div class="bold">Epoxy Resin</div>
+                        <div class="secondary-text">Category: Resin | Unit: Liters</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div class="bold">200 L</div>
+                        <div class="status-pill status-partial">Quarantine</div>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:rgba(255,255,255,0.5); padding:10px; border-radius:8px;">
+                    <div>
+                        <label style="font-size:10px; color:var(--color-text-muted)">Batch #</label>
+                        <div style="font-size:12px; font-weight:600">BATCH-B202</div>
+                    </div>
+                    <div>
+                        <label style="font-size:10px; color:var(--color-text-muted)">Mfg Date</label>
+                        <div style="font-size:12px; font-weight:600">01 Mar 2026</div>
+                    </div>
+                    <div>
+                        <label style="font-size:10px; color:var(--color-text-muted)">Expiry</label>
+                        <div style="font-size:12px; font-weight:600">01 Mar 2027</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="slide-panel-footer" id="qc-actions-footer" style="display:none">
+        <button class="btn-ghost" style="color:var(--color-danger)" onclick="alert('GRN Marked as QC Rejected')">Reject Batch</button>
+        <button class="btn-primary" id="approve-grn-btn">Approve QC</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/procurement.js"></script>
+    <script>
+        function viewGrnDetails(num) {
+            document.getElementById('grn-panel-title').textContent = `GRN Details - ${num}`;
+            document.getElementById('qc-actions-footer').style.display = 'none';
+            ProcurementUI.openPanel('grn-detail-panel');
+        }
+
+        function showQcApproval(num) {
+            document.getElementById('grn-panel-title').textContent = `QC Approval - ${num}`;
+            document.getElementById('qc-actions-footer').style.display = 'flex';
+            ProcurementUI.openPanel('grn-detail-panel');
+        }
+
+        document.getElementById('approve-grn-btn').addEventListener('click', () => {
+            const btn = document.getElementById('approve-grn-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Approving...';
+            
+            setTimeout(() => {
+                alert('QC Approved! Material moved to Active Stock.');
+                ProcurementUI.closeAllPanels();
+                window.location.reload();
+            }, 1200);
+        });
+    </script>
+}

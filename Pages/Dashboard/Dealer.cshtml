@@ -1,0 +1,41 @@
+@page
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Dealer Portal";
+}
+
+<div class="page-header">
+    <h1>Dealer Portal</h1>
+</div>
+
+<div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">Reward Points</span>
+            <svg class="kpi-card-icon" style="color: var(--color-icon-blue);" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+        </div>
+        <div class="kpi-card-value">2,450</div>
+        <div class="kpi-card-sub">+120 this month</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">My Orders</span>
+            <svg class="kpi-card-icon" style="color: var(--color-icon-indigo);" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </div>
+        <div class="kpi-card-value">15</div>
+        <div class="kpi-card-sub">3 in transit</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-card-top">
+            <span class="kpi-card-label">Outstanding</span>
+            <svg class="kpi-card-icon" style="color: var(--color-icon-pink);" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="kpi-card-value">₹1,25,000</div>
+        <div class="kpi-card-sub" style="color: var(--color-warning);">Due in 15 days</div>
+    </div>
+</div>
+
+<div class="card" style="min-height: 200px;">
+    <h3 style="margin-bottom: var(--space-4);">Order History & Rewards</h3>
+    <p class="text-muted">Dealer-specific features will be added in the next phase.</p>
+</div>

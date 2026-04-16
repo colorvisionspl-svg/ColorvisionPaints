@@ -1,0 +1,144 @@
+/* =============================================================
+   DESIGN TOKENS — Nexus Style v2.0
+   ColorVision Paints ERP
+   DO NOT modify without updating DESIGN_SYSTEM_NEXUS.md
+   ============================================================= */
+
+@import url('https://fonts.cdnfonts.com/css/gilroy-free');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+/* Fallback color while background image loads */
+html { background: #c8daf5; }
+
+:root {
+  /* ── Fonts ── */
+  --font-primary: 'Gilroy', 'Plus Jakarta Sans', 'DM Sans', sans-serif;
+
+  /* ── Font Scale ── */
+  --text-2xs:  10px;
+  --text-xs:   11px;
+  --text-sm:   12px;
+  --text-base: 13px;
+  --text-md:   14px;
+  --text-lg:   16px;
+  --text-xl:   18px;
+  --text-2xl:  22px;
+  --text-3xl:  28px;
+  --text-4xl:  36px;
+
+  /* ── Base Colors ── */
+  --color-bg-app:           #F0F2F8;
+  --color-bg-topbar:        #FFFFFF;
+  --color-bg-subnav:        #FFFFFF;
+  --color-bg-sidebar:       #FFFFFF;
+  --color-bg-card:          #FFFFFF;
+  --color-bg-input:         #FFFFFF;
+
+  /* ── Glassmorphism ── */
+  --color-bg-glass-blue:    rgba(220, 235, 255, 0.75);
+  --color-bg-glass-pink:    rgba(255, 220, 235, 0.70);
+  --color-bg-glass-purple:  rgba(230, 220, 255, 0.45);
+  --color-glass-blur:       blur(16px);
+
+  /* ── Text Colors ── */
+  --color-text-primary:     #1A1D2E;
+  --color-text-secondary:   #4A5270;
+  --color-text-muted:       #8B92A9;
+  --color-text-disabled:    #BCC0CE;
+
+  /* ── Accent (Primary Blue) ── */
+  --color-accent:           #4F6EF7;
+  --color-accent-light:     #EEF1FE;
+  --color-accent-hover:     #3D5AE5;
+  --color-accent-pressed:   #2D48D0;
+
+  /* ── Icon Colors ── */
+  --color-icon-blue:        #4F6EF7;
+  --color-icon-indigo:      #7C6FF7;
+  --color-icon-teal:        #2DC7A4;
+  --color-icon-pink:        #F76F9A;
+  --color-icon-orange:      #F7A24F;
+
+  /* ── Status Colors ── */
+  --color-success:          #22C997;
+  --color-success-bg:       rgba(34, 201, 151, 0.10);
+  --color-warning:          #F7A24F;
+  --color-warning-bg:       rgba(247, 162, 79, 0.10);
+  --color-danger:           #F76F6F;
+  --color-danger-bg:        rgba(247, 111, 111, 0.10);
+  --color-info:             #4F6EF7;
+  --color-info-bg:          rgba(79, 110, 247, 0.08);
+
+  /* ── Borders ── */
+  --color-border:           rgba(0, 0, 0, 0.06);
+  --color-border-medium:    rgba(0, 0, 0, 0.10);
+  --color-border-strong:    rgba(0, 0, 0, 0.16);
+  --color-border-accent:    rgba(79, 110, 247, 0.40);
+
+  /* ── Spacing (4px grid) ── */
+  --space-0:   0px;
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   28px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+
+  /* ── Border Radius ── */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-2xl:  24px;
+  --radius-pill: 999px;
+
+  /* ── Shadows ── */
+  --shadow-none:     none;
+  --shadow-xs:       0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm:       0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-md:       0 2px 8px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-lg:       0 4px 24px rgba(0,0,0,0.08), 0 8px 40px rgba(0,0,0,0.06);
+  --shadow-topbar:   0 1px 0 rgba(0,0,0,0.06);
+  --shadow-card:     var(--shadow-sm);
+  --shadow-modal:    var(--shadow-lg);
+  --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.12);
+
+  /* ── Z-Index Stack ── */
+  --z-base:      1;
+  --z-card:      10;
+  --z-dropdown:  100;
+  --z-subnav:    150;
+  --z-topbar:    200;
+  --z-sidebar:   300;
+  --z-overlay:   800;
+  --z-modal:     900;
+  --z-toast:     1000;
+
+  /* ── Transitions ── */
+  --ease-fast:   0.12s ease;
+  --ease-base:   0.2s ease;
+  --ease-slow:   0.3s ease;
+  --ease-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Layout ── */
+  --topbar-height:   60px;
+  --subnav-height:   52px;
+  --sidebar-width:   260px;
+  --content-offset:  112px;  /* topbar + subnav */
+
+  /* ── Icon Sizes ── */
+  --icon-xs:   12px;
+  --icon-sm:   14px;
+  --icon-base: 16px;
+  --icon-md:   18px;
+  --icon-lg:   20px;
+  --icon-xl:   24px;
+  --icon-2xl:  32px;
+}

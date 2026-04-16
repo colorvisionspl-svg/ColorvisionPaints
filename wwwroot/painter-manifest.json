@@ -1,0 +1,17 @@
+{
+  "name": "ColorVision Painter Rewards",
+  "short_name": "CV Rewards",
+  "description": "Earn cashback rewards by scanning ColorVision paint QR codes",
+  "start_url": "/painter/dashboard",
+  "display": "standalone",
+  "background_color": "#F0F2F8",
+  "theme_color": "#4F6EF7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

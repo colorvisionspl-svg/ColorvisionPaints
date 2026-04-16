@@ -1,0 +1,410 @@
+@page "/scan/{serialNumber}"
+@model ColorvisionPaintsERP.Pages.Scan.IndexModel
+@{
+    Layout = "_PainterLayout";
+    ViewData["Title"] = "Claim Your Reward";
+    var qr = Model.QrCode;
+}
+
+@if (qr == null)
+{
+    <!-- Not a valid QR -->
+    <div class="pwa-error-screen" style="background:linear-gradient(160deg,#8B92A9 0%,#6B7280 100%)">
+        <div class="pwa-error-icon">❓</div>
+        <p class="pwa-error-title">Invalid QR Code</p>
+        <p class="pwa-error-msg">This QR code is not recognized.<br>Please scan a valid ColorVision paint code.</p>
+    </div>
+}
+else if (qr.Status == "Expired")
+{
+    <div class="pwa-error-screen pwa-error-expired">
+        <div class="pwa-error-icon">⏰</div>
+        <p class="pwa-error-title">Code Expired</p>
+        <p class="pwa-error-msg">This QR code expired on @qr.ExpiryDate.ToString("d MMM yyyy").<br>It is no longer valid for rewards.</p>
+    </div>
+}
+else if (qr.Status == "Voided")
+{
+    <div class="pwa-error-screen" style="background:linear-gradient(160deg,#6B7280 0%,#4B5563 100%)">
+        <div class="pwa-error-icon">🚫</div>
+        <p class="pwa-error-title">Code Voided</p>
+        <p class="pwa-error-msg">This QR code has been deactivated.<br>Contact your dealer or ColorVision support.</p>
+    </div>
+}
+else if (qr.Status == "Scanned")
+{
+    <div class="pwa-error-screen pwa-error-already">
+        <div class="pwa-error-icon">⛔</div>
+        <p class="pwa-error-title">Already Claimed!</p>
+        <p class="pwa-error-msg">
+            This QR code was already claimed on
+            <strong>@(qr.ScannedAt?.ToString("d MMM yyyy") ?? "a previous date")</strong>
+            @if (!string.IsNullOrEmpty(qr.ScanCity)) { <text>from @qr.ScanCity</text> }<br><br>
+            Each code can only be redeemed once.
+        </p>
+        <div style="margin-top:24px;opacity:0.8;font-size:13px">@qr.SerialNumber</div>
+    </div>
+}
+else
+{
+    <!-- VALID UNSCANNED QR — Full flow -->
+    <div class="pwa-root" id="pwa-root">
+
+        <!-- STEP 1: Validate & Show Info -->
+        <div id="step-1" class="step-screen">
+            <div class="pwa-topbar">
+                <p class="pwa-logo">ColorVision Paints</p>
+                <h1 class="pwa-title">You Found a Reward! 🎉</h1>
+                <p class="pwa-subtitle">Claim your points by completing the steps below</p>
+            </div>
+
+            <!-- Step indicator -->
+            <div class="pwa-steps">
+                <div class="pwa-step active" id="dot-1">1</div>
+                <div class="pwa-step-line"></div>
+                <div class="pwa-step" id="dot-2">2</div>
+                <div class="pwa-step-line"></div>
+                <div class="pwa-step" id="dot-3">3</div>
+                <div class="pwa-step-line"></div>
+                <div class="pwa-step" id="dot-4">✓</div>
+            </div>
+
+            <div class="pwa-card-floating">
+                <!-- Product card -->
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+                    <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#4F6EF7,#7C6FF7);display:flex;align-items:center;justify-content:center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    </div>
+                    <div>
+                        <p style="font-size:11px;font-weight:600;color:#8B92A9;text-transform:uppercase;letter-spacing:.05em">Product Scanned</p>
+                        <p style="font-size:16px;font-weight:800;color:#1A1D2E">@qr.ProductName</p>
+                        <p style="font-size:12px;color:#8B92A9">Batch: @qr.BatchNumber</p>
+                    </div>
+                </div>
+
+                <!-- Points earned value -->
+                <div style="background:linear-gradient(135deg,rgba(34,201,151,0.12),rgba(34,201,151,0.04));border:1.5px solid rgba(34,201,151,0.25);border-radius:16px;padding:18px;text-align:center;margin-bottom:20px">
+                    <p style="font-size:12px;font-weight:600;color:#22C997;text-transform:uppercase;letter-spacing:.05em">You Will Earn</p>
+                    <p style="font-size:48px;font-weight:900;color:#22C997;line-height:1">@qr.PointValue</p>
+                    <p style="font-size:14px;font-weight:600;color:#22C997">Points = ₹@qr.PointValue Cash</p>
+                </div>
+
+                <!-- Location detection -->
+                <div style="background:#F8F9FE;border-radius:12px;padding:14px;margin-bottom:20px;display:flex;align-items:center;gap:10px" id="location-status">
+                    <div id="location-icon" style="width:36px;height:36px;border-radius:10px;background:rgba(79,110,247,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F6EF7" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+                    </div>
+                    <div style="flex:1">
+                        <p style="font-size:12px;font-weight:700;color:#1A1D2E;margin:0" id="location-title">Detecting your location…</p>
+                        <p style="font-size:11px;color:#8B92A9;margin:2px 0 0" id="location-detail">Required for fraud prevention</p>
+                    </div>
+                    <div id="location-spinner" style="width:18px;height:18px;border:2px solid rgba(79,110,247,0.2);border-top-color:#4F6EF7;border-radius:50%;animation:spin .8s linear infinite"></div>
+                </div>
+
+                <button class="pwa-btn pwa-btn-success" id="btn-claim" disabled onclick="goToStep2()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Claim My Reward
+                </button>
+                <p style="font-size:11px;color:#8B92A9;text-align:center;margin-top:10px">Valid until: @qr.ExpiryDate.ToString("d MMM yyyy")</p>
+            </div>
+        </div>
+
+        <!-- STEP 2: Auth (Mobile OTP) -->
+        <div id="step-2" class="step-screen" style="display:none">
+            <div class="pwa-topbar">
+                <p class="pwa-logo">ColorVision Paints</p>
+                <h1 class="pwa-title">Verify Your Number</h1>
+                <p class="pwa-subtitle">We'll send you a one-time password</p>
+            </div>
+            <div class="pwa-card-floating">
+                <label class="pwa-input-label">Mobile Number</label>
+                <div style="display:flex;gap:8px;margin-bottom:16px">
+                    <div style="width:54px;height:52px;border-radius:14px;background:#F8F9FE;border:1.5px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#1A1D2E;flex-shrink:0">+91</div>
+                    <input type="tel" class="pwa-input" id="mobile-input" placeholder="9XXXXXXXXX" maxlength="10" pattern="[0-9]{10}"
+                           style="font-size:18px;font-weight:700;letter-spacing:.04em">
+                </div>
+
+                <button class="pwa-btn pwa-btn-primary" id="btn-send-otp" onclick="sendOTP()">
+                    Send OTP
+                </button>
+
+                <!-- OTP Section (shown after send) -->
+                <div id="otp-section" style="display:none;margin-top:20px">
+                    <div style="height:1px;background:rgba(0,0,0,0.07);margin-bottom:20px"></div>
+                    <p style="font-size:13px;font-weight:700;color:#1A1D2E;text-align:center;margin-bottom:16px">Enter 6-digit OTP</p>
+                    <div class="otp-grid" id="otp-inputs">
+                        <input type="number" class="otp-input" maxlength="1" oninput="onOtpInput(this,0)">
+                        <input type="number" class="otp-input" maxlength="1" oninput="onOtpInput(this,1)">
+                        <input type="number" class="otp-input" maxlength="1" oninput="onOtpInput(this,2)">
+                        <input type="number" class="otp-input" maxlength="1" oninput="onOtpInput(this,3)">
+                        <input type="number" class="otp-input" maxlength="1" oninput="onOtpInput(this,4)">
+                        <input type="number" class="otp-input" maxlength="1" oninput="onOtpInput(this,5)">
+                    </div>
+                    <button class="pwa-btn pwa-btn-success" id="btn-verify-otp" onclick="verifyOTP()" disabled style="margin-top:12px">
+                        Verify & Continue
+                    </button>
+                    <p style="font-size:12px;color:#8B92A9;text-align:center;margin-top:10px">
+                        <a href="#" onclick="sendOTP(); return false" style="color:#4F6EF7;text-decoration:none;font-weight:600">Resend OTP</a> · For demo: use 1-2-3-4-5-6
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Registration (first time only) -->
+        <div id="step-3" class="step-screen" style="display:none">
+            <div class="pwa-topbar">
+                <p class="pwa-logo">ColorVision Paints</p>
+                <h1 class="pwa-title">Complete Registration</h1>
+                <p class="pwa-subtitle">One-time setup to receive your rewards</p>
+            </div>
+            <div class="pwa-card-floating">
+                <div style="display:flex;flex-direction:column;gap:14px">
+                    <div>
+                        <label class="pwa-input-label">Full Name *</label>
+                        <input type="text" class="pwa-input" id="reg-name" placeholder="Enter your full name">
+                    </div>
+                    <div>
+                        <label class="pwa-input-label">City *</label>
+                        <input type="text" class="pwa-input" id="reg-city" placeholder="Your city name">
+                    </div>
+                    <div>
+                        <label class="pwa-input-label">UPI ID * (for cashback)</label>
+                        <input type="text" class="pwa-input" id="reg-upi" placeholder="name@@bank">
+                        <p style="font-size:11px;color:#8B92A9;margin-top:4px">Example: ramesh.kumar@@paytm</p>
+                    </div>
+                    <div>
+                        <label class="pwa-input-label">Aadhaar Last 4 Digits * (for TDS)</label>
+                        <input type="number" class="pwa-input" id="reg-aadhaar" placeholder="XXXX" maxlength="4">
+                    </div>
+                </div>
+                <button class="pwa-btn pwa-btn-primary" style="margin-top:20px" onclick="completeRegistration()">
+                    Complete Registration →
+                </button>
+                <p style="font-size:11px;color:#8B92A9;text-align:center;margin-top:12px;line-height:1.5">
+                    Your data is stored securely and used only for reward processing
+                </p>
+            </div>
+        </div>
+
+        <!-- STEP 4: Processing -->
+        <div id="step-4" class="step-screen" style="display:none;align-items:center;justify-content:center;min-height:100vh">
+            <div style="text-align:center;padding:40px 24px">
+                <div style="width:80px;height:80px;border:4px solid rgba(79,110,247,0.2);border-top-color:#4F6EF7;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 24px"></div>
+                <p style="font-size:18px;font-weight:800;color:#1A1D2E;margin-bottom:8px">Crediting your points…</p>
+                <p style="font-size:14px;color:#8B92A9">Running fraud verification & updating your wallet</p>
+            </div>
+        </div>
+
+        <!-- STEP 5: SUCCESS SCREEN -->
+        <div id="step-5" class="step-screen" style="display:none">
+            <div style="background:linear-gradient(160deg, #1A1D2E 0%, #2D3158 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px">
+                <div class="success-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22C997" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <p style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Points Credited!</p>
+                <p class="success-points" id="success-pts">₹15</p>
+                <p style="font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:6px">Earned from</p>
+                <p style="font-size:16px;font-weight:700;color:#fff;margin-bottom:28px" id="success-product">@qr.ProductName</p>
+
+                <!-- Balance card -->
+                <div style="background:rgba(255,255,255,0.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:20px 24px;width:100%;max-width:320px;text-align:center;margin-bottom:24px">
+                    <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:4px">Your Total Balance</p>
+                    <p style="font-size:38px;font-weight:900;color:#fff" id="success-balance">0</p>
+                    <p style="font-size:13px;color:rgba(255,255,255,0.5)">pts = <span style="color:#22C997;font-weight:700" id="success-inr">₹0</span></p>
+
+                    <!-- Tier progress -->
+                    <div style="margin-top:16px;background:rgba(255,255,255,0.08);border-radius:12px;padding:12px">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                            <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6)" id="success-tier">Bronze</span>
+                            <span style="font-size:11px;color:rgba(255,255,255,0.4)" id="success-next-tier">Silver</span>
+                        </div>
+                        <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:20px">
+                            <div style="height:100%;border-radius:20px;background:linear-gradient(90deg,#22C997,#4F6EF7);transition:width 0.8s" id="success-tier-bar"></div>
+                        </div>
+                        <p style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px" id="success-tier-info"></p>
+                    </div>
+                </div>
+
+                <a href="/painter/dashboard" class="pwa-btn pwa-btn-success" style="text-decoration:none;max-width:320px">
+                    View My Dashboard →
+                </a>
+                <p style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:16px">@qr.SerialNumber</p>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+@@keyframes spin { to { transform: rotate(360deg); } }
+.step-screen { animation: fadein .3s; }
+@@keyframes fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+</style>
+
+@section PageScripts {
+<script>
+/* ── DEVICE FINGERPRINT ── */
+const deviceFP = btoa([navigator.userAgent, screen.width, screen.height, navigator.language, navigator.hardwareConcurrency].join('|')).replace(/=/g,'');
+localStorage.setItem('cv_device_fp', deviceFP);
+
+let gpsLat = null, gpsLng = null, cityName = '', scanCity = '';
+
+/* ── GPS CAPTURE ── */
+function captureGPS() {
+    if (!navigator.geolocation) {
+        setLocationStatus(false, 'GPS unavailable', 'Proceed without location');
+        enableClaim();
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(async pos => {
+        gpsLat = pos.coords.latitude;
+        gpsLng = pos.coords.longitude;
+        try {
+            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${gpsLat}&lon=${gpsLng}&format=json`);
+            const d = await r.json();
+            cityName = d.address?.city || d.address?.town || d.address?.village || 'Unknown';
+            const state = d.address?.state || '';
+            setLocationStatus(true, cityName, state);
+        } catch {
+            setLocationStatus(true, 'Location detected', `${gpsLat.toFixed(4)}, ${gpsLng.toFixed(4)}`);
+        }
+        enableClaim();
+    }, err => {
+        setLocationStatus(false, 'Location permission denied', 'Continuing without GPS data');
+        enableClaim();
+    }, { timeout: 8000 });
+}
+
+function setLocationStatus(ok, title, detail) {
+    document.getElementById('location-title').textContent = title;
+    document.getElementById('location-detail').textContent = detail;
+    document.getElementById('location-spinner').style.display = 'none';
+    if (ok) {
+        document.getElementById('location-icon').style.background = 'rgba(34,201,151,0.1)';
+        document.getElementById('location-icon').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22C997" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+    }
+}
+
+function enableClaim() {
+    const btn = document.getElementById('btn-claim');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+
+/* ── STEP NAVIGATION ── */
+function showStep(n) {
+    document.querySelectorAll('.step-screen').forEach((el,i) => {
+        el.style.display = i === n-1 ? '' : 'none';
+    });
+    ['dot-1','dot-2','dot-3','dot-4'].forEach((id,i) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = 'pwa-step ' + (i < n-1 ? 'done' : i === n-1 ? 'active' : '');
+    });
+}
+
+function goToStep2() {
+    const returning = !!localStorage.getItem('cv_painter_id');
+    if (returning) {
+        creditPoints();
+    } else {
+        showStep(2);
+    }
+}
+
+/* ── OTP ── */
+function sendOTP() {
+    const mob = document.getElementById('mobile-input')?.value;
+    if (!mob || mob.length < 10) { alert('Enter a valid 10-digit mobile number.'); return; }
+    document.getElementById('btn-send-otp').textContent = 'OTP Sent ✓';
+    document.getElementById('btn-send-otp').style.background = 'rgba(34,201,151,0.15)';
+    document.getElementById('btn-send-otp').style.color = '#22C997';
+    document.getElementById('otp-section').style.display = '';
+    document.getElementById('otp-inputs').querySelectorAll('input')[0].focus();
+}
+
+function onOtpInput(el, idx) {
+    const val = el.value.toString().slice(-1);
+    el.value = val;
+    const allOtp = document.querySelectorAll('.otp-input');
+    if (val && idx < 5) allOtp[idx+1].focus();
+    const full = [...allOtp].map(i=>i.value).join('');
+    document.getElementById('btn-verify-otp').disabled = full.length < 6;
+}
+
+function verifyOTP() {
+    const allOtp = document.querySelectorAll('.otp-input');
+    const code = [...allOtp].map(i=>i.value).join('');
+    if (code === '123456') {
+        const painterId = localStorage.getItem('cv_painter_id');
+        if (painterId) {
+            creditPoints();
+        } else {
+            showStep(3);
+        }
+    } else {
+        alert('Incorrect OTP. Hint: use 1-2-3-4-5-6 for demo.');
+    }
+}
+
+/* ── REGISTRATION ── */
+function completeRegistration() {
+    const name    = document.getElementById('reg-name')?.value.trim();
+    const city    = document.getElementById('reg-city')?.value.trim();
+    const upi     = document.getElementById('reg-upi')?.value.trim();
+    const aadhaar = document.getElementById('reg-aadhaar')?.value.trim();
+    if (!name || !city || !upi || !aadhaar) { alert('All fields are required.'); return; }
+    if (!/^[a-zA-Z0-9._+-]+@@[a-zA-Z]+$/.test(upi)) { alert('Enter a valid UPI ID (e.g. name@@paytm)'); return; }
+    const painterId = 'P-' + Date.now();
+    localStorage.setItem('cv_painter_id', painterId);
+    localStorage.setItem('cv_painter_name', name);
+    localStorage.setItem('cv_painter_city', city);
+    localStorage.setItem('cv_painter_upi', upi);
+    localStorage.setItem('cv_painter_pts', '0');
+    creditPoints();
+}
+
+/* ── CREDIT POINTS ── */
+async function creditPoints() {
+    showStep(4);
+    await new Promise(r => setTimeout(r, 2000)); // Simulate API call
+
+    /* Fraud check: >20 scans today */
+    const today = new Date().toDateString();
+    const scanKey = 'cv_scans_' + today;
+    const todayScans = parseInt(localStorage.getItem(scanKey) || '0');
+    if (todayScans >= 20) {
+        alert('⚠️ Scan limit reached for today. Please try again tomorrow.');
+        window.location.reload();
+        return;
+    }
+
+    const pts = @qr.PointValue;
+    const currentPts = parseInt(localStorage.getItem('cv_painter_pts') || '0');
+    const newPts = currentPts + pts;
+    localStorage.setItem('cv_painter_pts', newPts.toString());
+    localStorage.setItem(scanKey, (todayScans + 1).toString());
+    localStorage.setItem('cv_last_city', cityName || 'Unknown');
+
+    // Tier calculation
+    function tierFromPts(p) { return p>=35000?'Platinum':p>=15000?'Gold':p>=5000?'Silver':'Bronze'; }
+    function tierPct(p) { if(p>=35000)return 100;if(p>=15000)return Math.round((p-15000)/20000*100);if(p>=5000)return Math.round((p-5000)/10000*100);return Math.round(p/5000*100); }
+    function tierNext(p) { if(p>=35000)return'Platinum ✓';if(p>=15000)return'5,000+ more → Platinum';if(p>=5000)return'5,000+ more → Gold';return'5,000+ more → Silver'; }
+
+    document.getElementById('success-pts').textContent = '₹' + pts;
+    document.getElementById('success-product').textContent = '@qr.ProductName';
+    document.getElementById('success-balance').textContent = newPts.toLocaleString('en-IN');
+    document.getElementById('success-inr').textContent = '₹' + newPts.toLocaleString('en-IN');
+    document.getElementById('success-tier').textContent = tierFromPts(newPts);
+    document.getElementById('success-next-tier').textContent = tierNext(newPts).split('→')[1]?.trim() || '';
+    document.getElementById('success-tier-bar').style.width = tierPct(newPts) + '%';
+    document.getElementById('success-tier-info').textContent = tierNext(newPts);
+
+    showStep(5);
+}
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+    captureGPS();
+    showStep(1);
+});
+</script>
+}

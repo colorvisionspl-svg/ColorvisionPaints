@@ -1,0 +1,280 @@
+@page
+@model ColorvisionPaintsERP.Pages.Manufacturing.ProductionOrdersModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Production Orders";
+    var active    = Model.Orders.Count(o => o.Status == "In-Progress");
+    var today     = Model.Orders.Count(o => o.PlannedStartDate.Date == DateTime.Today);
+    var qcPending = Model.Orders.Count(o => o.Status == "QC-Pending");
+    var completed = Model.Orders.Count(o => o.Status == "Completed");
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/manufacturing.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Production Orders</h1>
+            <p class="page-subtitle">Plan, release, and track manufacturing runs end-to-end</p>
+        </div>
+        <button class="btn-primary" onclick="MfgUI.openPanel('panel-create-po')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Order
+        </button>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Active Orders</p>
+            <p class="value" style="color:#F7A24F">@active</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Planned Today</p>
+            <p class="value">@today</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">QC Pending</p>
+            <p class="value" style="color:#7C6FF7">@qcPending</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Completed This Month</p>
+            <p class="value" style="color:#22C997">@completed</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card table-wrapper">
+        <div class="filter-bar">
+            <div class="search-group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search orders…" oninput="filterOrders(this.value)">
+            </div>
+            <select class="filter-select" onchange="filterOrders()">
+                <option value="">All Status</option>
+                <option>Planned</option>
+                <option>Released</option>
+                <option>In-Progress</option>
+                <option>QC-Pending</option>
+                <option>Completed</option>
+                <option>Closed</option>
+            </select>
+        </div>
+
+        <table class="data-table" id="po-table">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Product</th>
+                    <th>Shade</th>
+                    <th>Formulation</th>
+                    <th>Qty (kg)</th>
+                    <th>Batches</th>
+                    <th>Line</th>
+                    <th>Planned Start</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model.Orders)
+                {
+                    var statusCls = o.Status switch {
+                        "Planned"     => "status-planned",
+                        "Released"    => "status-released",
+                        "In-Progress" => "status-in-progress",
+                        "QC-Pending"  => "status-qc-pending",
+                        "Completed"   => "status-completed",
+                        "Closed"      => "status-closed",
+                        _             => "status-draft"
+                    };
+                    <tr>
+                        <td><span class="material-pill">@o.OrderNumber</span></td>
+                        <td><span class="bold">@o.ProductName</span></td>
+                        <td>@o.ShadeName</td>
+                        <td><span class="secondary-text">@o.FormulationId v@o.FormulationVersion</span></td>
+                        <td>@o.PlannedQuantityKg.ToString("N0") kg</td>
+                        <td style="text-align:center">@o.PlannedBatches</td>
+                        <td>@o.ProductionLineName</td>
+                        <td>@o.PlannedStartDate.ToString("dd MMM")</td>
+                        <td><span class="status-pill @statusCls">@o.Status</span></td>
+                        <td class="actions-cell">
+                            @if (o.Status == "Planned")
+                            {
+                                <button class="btn-icon" title="Release Order">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4F6EF7" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                </button>
+                            }
+                            @if (o.Status == "Released")
+                            {
+                                <button class="btn-icon" title="Start Production" onclick="MfgUI.openPanel('panel-start-batch')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C997" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                                </button>
+                            }
+                            <button class="btn-icon" title="View Details">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="panel-overlay" onclick="MfgUI.closeAllPanels()"></div>
+
+<!-- SLIDE PANEL: CREATE PRODUCTION ORDER -->
+<div class="slide-panel" id="panel-create-po">
+    <div class="slide-panel-header">
+        <h2>New Production Order</h2>
+        <button class="close-panel-btn" onclick="MfgUI.closeAllPanels()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+
+        <p class="panel-section-title" style="margin-top:0">Order Details</p>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>Product Variant *</label>
+                <select class="form-control" id="po-product">
+                    <option value="">Search product…</option>
+                    @foreach (var f in Model.Formulations)
+                    {
+                        <option value="@f.Id" data-batch="@f.StandardBatchSizeKg">@f.ProductName — @f.ShadeName</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label>Formulation</label>
+                <select class="form-control" id="po-formulation">
+                    @foreach (var f in Model.Formulations)
+                    {
+                        <option value="@f.Id" data-batch="@f.StandardBatchSizeKg">@f.FormulationCode — @f.ProductName v@f.Version</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Planned Quantity (kg) *</label>
+                <input type="number" class="form-control" id="po-qty" placeholder="e.g. 5000"
+                       oninput="calcPoBatches()">
+            </div>
+            <div class="form-group">
+                <label>No. of Batches (auto)</label>
+                <input type="text" class="form-control" id="po-batch-count" disabled value="—">
+            </div>
+            <div class="form-group full-width">
+                <label>Production Line *</label>
+                <select class="form-control">
+                    @foreach (var l in Model.Lines)
+                    {
+                        <option value="@l.Id">@l.Name (@l.CapacityKgPerDay.ToString("N0") kg/day)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Planned Start Date *</label>
+                <input type="date" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="form-group">
+                <label>Planned End Date *</label>
+                <input type="date" class="form-control">
+            </div>
+        </div>
+
+        <!-- Material availability check -->
+        <div class="glass-card" style="margin-top:16px;padding:16px">
+            <p class="panel-section-title" style="margin:0 0 8px 0">Material Availability Check</p>
+            <p class="secondary-text">Select a formulation and quantity to see material requirements.</p>
+            <div id="material-avail-table"></div>
+        </div>
+
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="MfgUI.closeAllPanels()">Cancel</button>
+        <button class="btn-primary" onclick="saveProductionOrder()">Save Order</button>
+    </div>
+</div>
+
+<!-- SLIDE PANEL: START BATCH -->
+<div class="slide-panel" id="panel-start-batch">
+    <div class="slide-panel-header">
+        <h2>Start Production Batch</h2>
+        <button class="close-panel-btn" onclick="MfgUI.closeAllPanels()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <p class="panel-section-title" style="margin-top:0">Batch Record</p>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Batch Number</label>
+                <input type="text" class="form-control" value="PRD-BATCH-AUTO" disabled>
+            </div>
+            <div class="form-group">
+                <label>Operator</label>
+                <select class="form-control">
+                    <option>Select operator…</option>
+                    <option>Ramesh K.</option>
+                    <option>Suresh P.</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Actual Start Time</label>
+                <input type="datetime-local" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Batch Size (kg)</label>
+                <input type="number" class="form-control" value="1000">
+            </div>
+        </div>
+        <p class="panel-section-title">Material Issue</p>
+        <table class="data-table">
+            <thead><tr><th>Material</th><th>Planned Qty</th><th>Actual Qty</th><th>Variance</th></tr></thead>
+            <tbody>
+                <tr><td>Titanium Dioxide</td><td>200 kg</td><td><input type="number" value="200" style="width:70px"></td><td class="avail-ok">0 kg</td></tr>
+                <tr><td>Calcium Carbonate</td><td>300 kg</td><td><input type="number" value="295" style="width:70px"></td><td class="avail-short">−5 kg</td></tr>
+                <tr><td>Acrylic Emulsion</td><td>400 kg</td><td><input type="number" value="400" style="width:70px"></td><td class="avail-ok">0 kg</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="MfgUI.closeAllPanels()">Cancel</button>
+        <button class="btn-primary" onclick="alert('Batch started! Status → In-Progress'); MfgUI.closeAllPanels()">Confirm & Start</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/manufacturing.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { MfgUI.initPanelClosers(); });
+
+        function filterOrders(val) {
+            const q = (val||'').toLowerCase();
+            document.querySelectorAll('#po-table tbody tr').forEach(tr => {
+                tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function calcPoBatches() {
+            const qty = parseFloat(document.getElementById('po-qty')?.value)||0;
+            const formSel = document.getElementById('po-formulation');
+            const batchSz = parseFloat(formSel?.selectedOptions[0]?.dataset.batch)||1000;
+            const batches = qty > 0 ? Math.ceil(qty/batchSz) : '—';
+            const el = document.getElementById('po-batch-count');
+            if (el) el.value = batches;
+        }
+
+        function saveProductionOrder() {
+            alert('Production order created successfully!');
+            MfgUI.closeAllPanels();
+        }
+    </script>
+}

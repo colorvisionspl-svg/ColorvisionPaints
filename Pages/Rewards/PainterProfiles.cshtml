@@ -1,0 +1,253 @@
+@page
+@model ColorvisionPaintsERP.Pages.Rewards.PainterProfilesModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Painter Profiles";
+    var activeMonth = Model.Painters.Count(p => p.LastScanAt >= DateTime.Now.AddDays(-30));
+    var byTier = Model.Painters.GroupBy(p => p.Tier).ToDictionary(g => g.Key, g => g.Count());
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/rewards.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Painter Profiles</h1>
+            <p class="page-subtitle">Manage registered painters, review scan history, and control access</p>
+        </div>
+        <div class="actions">
+            <button class="btn-ghost">Export CSV</button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Total Registered</p>
+            <p class="value">@Model.Painters.Count</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Active (30 days)</p>
+            <p class="value" style="color:#22C997">@activeMonth</p>
+        </div>
+        <div class="glass-card summary-card" style="display:flex;flex-direction:row;gap:12px;align-items:center;flex-wrap:wrap">
+            <div>
+                <p class="label">Tier Split</p>
+                @foreach (var t in new[]{"Platinum","Gold","Silver","Bronze"})
+                {
+                    var cnt = byTier.GetValueOrDefault(t, 0);
+                    <span class="tier-badge tier-@t.ToLower()" style="margin-right:4px;margin-bottom:4px">@t @cnt</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card table-wrapper">
+        <div class="filter-bar">
+            <div class="search-group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search name, mobile, city…" oninput="RewardsUI.filterTable('painter-table', this.value)">
+            </div>
+            <select class="filter-select">
+                <option value="">All Tiers</option>
+                <option>Bronze</option>
+                <option>Silver</option>
+                <option>Gold</option>
+                <option>Platinum</option>
+            </select>
+            <select class="filter-select">
+                <option value="">All Status</option>
+                <option>Active</option>
+                <option>Blocked</option>
+            </select>
+        </div>
+        <table class="data-table" id="painter-table">
+            <thead>
+                <tr>
+                    <th>Mobile</th>
+                    <th>Name</th>
+                    <th>City</th>
+                    <th>Tier</th>
+                    <th>Balance</th>
+                    <th>Total Earned</th>
+                    <th>Last Scan</th>
+                    <th>Verified</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model.Painters)
+                {
+                    var tierCls = p.Tier.ToLower();
+                    var statusCls = p.IsBlocked ? "status-failed" : "status-active";
+                    var statusLabel = p.IsBlocked ? "Blocked" : "Active";
+                    <tr style="cursor:pointer" onclick="openPainterDetail('@p.Id','@p.Name','@p.Tier',@p.CurrentPoints,@p.TotalPointsEarned,@p.TotalPointsRedeemed,'@p.UpiId','@p.City','@p.Mobile','@p.IsBlocked.ToString().ToLower()')">
+                        <td><span style="font-family:monospace;font-size:12px">@p.Mobile</span></td>
+                        <td><span class="bold">@p.Name</span></td>
+                        <td>@p.City</td>
+                        <td><span class="tier-badge tier-@tierCls">@p.Tier</span></td>
+                        <td style="font-weight:700;color:#4F6EF7">@p.CurrentPoints.ToString("N0") pts</td>
+                        <td>@p.TotalPointsEarned.ToString("N0")</td>
+                        <td>@(p.LastScanAt.HasValue ? p.LastScanAt.Value.ToString("dd MMM") : "Never")</td>
+                        <td>
+                            @if (p.IsVerified)
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22C997" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            }
+                            else
+                            {
+                                <span style="color:#F7A24F;font-size:12px">Pending</span>
+                            }
+                        </td>
+                        <td><span class="status-pill @statusCls">@statusLabel</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-icon" title="Details" onclick="event.stopPropagation(); openPainterDetail('@p.Id','@p.Name','@p.Tier',@p.CurrentPoints,@p.TotalPointsEarned,@p.TotalPointsRedeemed,'@p.UpiId','@p.City','@p.Mobile','@p.IsBlocked.ToString().ToLower()')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="panel-overlay" onclick="RewardsUI.closeAll()"></div>
+
+<!-- SLIDE PANEL: PAINTER DETAIL -->
+<div class="slide-panel" id="panel-painter-detail" style="width:560px">
+    <div class="slide-panel-header">
+        <h2 id="detail-name">Painter Profile</h2>
+        <button class="close-panel-btn" onclick="RewardsUI.closeAll()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <!-- Profile header -->
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+            <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#4F6EF7,#7C6FF7);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff" id="detail-avatar">R</div>
+            <div>
+                <p style="font-weight:700;font-size:16px;color:var(--color-text-primary)" id="detail-name2">—</p>
+                <p style="font-size:13px;color:var(--color-text-muted)" id="detail-mobile">—</p>
+                <span class="tier-badge" id="detail-tier-badge">Bronze</span>
+            </div>
+        </div>
+
+        <!-- Balance -->
+        <div class="glass-card" style="background:linear-gradient(135deg,#4F6EF7,#7C6FF7);padding:18px;margin-bottom:16px">
+            <p style="font-size:12px;color:rgba(255,255,255,0.75);font-weight:600">Current Balance</p>
+            <p style="font-size:36px;font-weight:900;color:#fff;line-height:1" id="detail-balance">0</p>
+            <p style="font-size:12px;color:rgba(255,255,255,0.75)">pts = <span id="detail-inr">₹0</span></p>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div class="glass-card" style="padding:14px;text-align:center">
+                <p class="label" style="font-size:11px">Total Earned</p>
+                <p style="font-weight:800;font-size:18px;color:#22C997" id="detail-earned">0</p>
+            </div>
+            <div class="glass-card" style="padding:14px;text-align:center">
+                <p class="label" style="font-size:11px">Total Redeemed</p>
+                <p style="font-weight:800;font-size:18px;color:#F7A24F" id="detail-redeemed">0</p>
+            </div>
+        </div>
+
+        <!-- Tier Progress -->
+        <p class="panel-section-title">Tier Progress</p>
+        <div class="tier-progress-wrap">
+            <span class="tier-badge" id="detail-tier-curr">Bronze</span>
+            <div class="tier-progress-track">
+                <div class="tier-progress-fill" id="detail-tier-bar" style="width:0%"></div>
+            </div>
+            <span class="tier-badge" id="detail-tier-next">Silver</span>
+        </div>
+        <p style="font-size:12px;color:var(--color-text-muted);text-align:right" id="detail-tier-info"></p>
+
+        <!-- Recent scans placeholder -->
+        <p class="panel-section-title" style="margin-top:16px">Quick Info</p>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>City</label>
+                <input type="text" class="form-control" id="detail-city" disabled>
+            </div>
+            <div class="form-group">
+                <label>UPI ID</label>
+                <input type="text" class="form-control" id="detail-upi" disabled>
+            </div>
+        </div>
+
+        <!-- Block/Unblock -->
+        <div id="block-section" style="margin-top:16px;border-top:1px solid rgba(0,0,0,0.06);padding-top:16px">
+            <p class="panel-section-title" style="color:#F76F6F">Danger Zone</p>
+            <div class="form-group" id="block-reason-group">
+                <label>Block Reason</label>
+                <input type="text" class="form-control" id="block-reason-input" placeholder="Reason for blocking…">
+            </div>
+            <button id="btn-block-toggle" class="btn-ghost" style="color:#F76F6F;border-color:rgba(247,111,111,0.3);width:100%;height:40px;margin-top:8px;font-size:13px">
+                Block Painter
+            </button>
+        </div>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="RewardsUI.closeAll()">Close</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/rewards-admin.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => RewardsUI.initClosers());
+
+        function openPainterDetail(id, name, tier, balance, earned, redeemed, upi, city, mobile, isBlocked) {
+            document.getElementById('detail-name').textContent  = name;
+            document.getElementById('detail-avatar').textContent = name[0].toUpperCase();
+            document.getElementById('detail-name2').textContent = name;
+            document.getElementById('detail-mobile').textContent= mobile;
+            document.getElementById('detail-balance').textContent = Number(balance).toLocaleString('en-IN');
+            document.getElementById('detail-inr').textContent   = '₹' + Number(balance).toLocaleString('en-IN');
+            document.getElementById('detail-earned').textContent  = Number(earned).toLocaleString('en-IN');
+            document.getElementById('detail-redeemed').textContent= Number(redeemed).toLocaleString('en-IN');
+            document.getElementById('detail-city').value = city;
+            document.getElementById('detail-upi').value  = upi;
+
+            const tierBadge = document.getElementById('detail-tier-badge');
+            const tierBadge2 = document.getElementById('detail-tier-curr');
+            tierBadge.textContent = tier;
+            tierBadge2.textContent = tier;
+            tierBadge.className = 'tier-badge tier-' + tier.toLowerCase();
+
+            const pct = RewardsUI.tierProgress(earned);
+            document.getElementById('detail-tier-bar').style.width = pct + '%';
+            document.getElementById('detail-tier-info').textContent = RewardsUI.tierNext(earned);
+
+            const blocked = isBlocked === 'true';
+            const btn = document.getElementById('btn-block-toggle');
+            const reasonGroup = document.getElementById('block-reason-group');
+            if (blocked) {
+                btn.textContent = '✓ Unblock Painter';
+                btn.style.color = '#22C997';
+                btn.style.borderColor = 'rgba(34,201,151,0.3)';
+                reasonGroup.style.display = 'none';
+            } else {
+                btn.textContent = 'Block Painter';
+                btn.style.color = '#F76F6F';
+                btn.style.borderColor = 'rgba(247,111,111,0.3)';
+                reasonGroup.style.display = '';
+            }
+
+            btn.onclick = () => {
+                const reason = document.getElementById('block-reason-input').value;
+                if (!blocked && !reason) { alert('Enter a reason to block painter.'); return; }
+                alert(blocked ? `Painter ${name} unblocked.` : `Painter ${name} blocked: ${reason}`);
+                RewardsUI.closeAll();
+            };
+
+            RewardsUI.openPanel('panel-painter-detail');
+        }
+    </script>
+}

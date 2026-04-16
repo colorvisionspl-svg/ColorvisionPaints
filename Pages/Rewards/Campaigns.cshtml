@@ -1,0 +1,188 @@
+@page
+@model ColorvisionPaintsERP.Pages.Rewards.CampaignsModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Campaigns";
+    var active = Model.Campaigns.Count(c => c.IsActive);
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/rewards.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Reward Campaigns</h1>
+            <p class="page-subtitle">Run targeted bonus campaigns to increase painter engagement — multiplier or flat bonus per scan</p>
+        </div>
+        <button class="btn-primary" onclick="RewardsUI.openPanel('panel-create-campaign')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Campaign
+        </button>
+    </div>
+
+    <!-- KPI -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Total Campaigns</p>
+            <p class="value">@Model.Campaigns.Count</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Active Now</p>
+            <p class="value" style="color:#22C997">@active</p>
+        </div>
+    </div>
+
+    <!-- Campaign Cards -->
+    <div class="campaign-grid">
+        @foreach (var c in Model.Campaigns)
+        {
+            var isExpired = c.EndDate < DateTime.Now;
+            var bonusLabel = c.BonusMultiplier > 1
+                ? $"{c.BonusMultiplier}× Points"
+                : $"+{c.BonusPoints} Pts Flat";
+            var daysLeft = (int)(c.EndDate - DateTime.Now).TotalDays;
+            var borderColor = c.IsActive ? "#22C997" : "rgba(0,0,0,0.08)";
+
+            <div class="glass-card campaign-card" style="border-left: 3px solid @borderColor">
+                <div class="campaign-card-header">
+                    <div>
+                        <p class="campaign-title">@c.Name</p>
+                        <p class="campaign-dates">@c.StartDate.ToString("d MMM") – @c.EndDate.ToString("d MMM yyyy")</p>
+                        @if (c.IsActive && !isExpired)
+                        {
+                            <span style="font-size:11px;color:#22C997;font-weight:600">● @daysLeft days left</span>
+                        }
+                        else if (isExpired)
+                        {
+                            <span style="font-size:11px;color:var(--color-text-muted)">Expired</span>
+                        }
+                    </div>
+                    <span class="bonus-pill">@bonusLabel</span>
+                </div>
+
+                <p style="font-size:13px;color:var(--color-text-muted);margin:8px 0 12px;line-height:1.5">@c.Description</p>
+
+                @if (c.TargetProductIds.Any())
+                {
+                    <p style="font-size:12px;margin-bottom:4px">
+                        <span style="color:var(--color-text-muted)">Products:</span>
+                        <span style="font-weight:600;color:var(--color-text-primary)">@string.Join(", ", c.TargetProductIds)</span>
+                    </p>
+                }
+                else
+                {
+                    <p style="font-size:12px;margin-bottom:4px;color:var(--color-text-muted)">Applies to: <strong style="color:var(--color-text-primary)">All Products</strong></p>
+                }
+
+                @if (c.TargetCities.Any())
+                {
+                    <p style="font-size:12px;margin-bottom:12px">
+                        <span style="color:var(--color-text-muted)">Cities:</span>
+                        <span style="font-weight:600;color:var(--color-text-primary)">@string.Join(", ", c.TargetCities)</span>
+                    </p>
+                }
+                else
+                {
+                    <p style="font-size:12px;margin-bottom:12px;color:var(--color-text-muted)">Applies to: <strong style="color:var(--color-text-primary)">All Cities</strong></p>
+                }
+
+                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(0,0,0,0.06);padding-top:12px">
+                    <label class="toggle-switch">
+                        <input type="checkbox" @(c.IsActive ? "checked" : "") onchange="toggleCampaign('@c.Id', this.checked, '@c.Name')">
+                        <span class="toggle-track"></span>
+                    </label>
+                    <span style="font-size:12px;color:var(--color-text-muted)">@(c.IsActive ? "Active" : "Inactive")</span>
+                    <button class="btn-ghost" style="height:30px;font-size:12px;padding:0 12px">Edit</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="panel-overlay" onclick="RewardsUI.closeAll()"></div>
+
+<!-- SLIDE PANEL: CREATE CAMPAIGN -->
+<div class="slide-panel" id="panel-create-campaign">
+    <div class="slide-panel-header">
+        <h2>New Campaign</h2>
+        <button class="close-panel-btn" onclick="RewardsUI.closeAll()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="slide-panel-content">
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>Campaign Name *</label>
+                <input type="text" class="form-control" id="camp-name" placeholder="e.g. Summer Monsoon Boost">
+            </div>
+            <div class="form-group full-width">
+                <label>Description</label>
+                <textarea class="form-control" rows="2" id="camp-desc" placeholder="Short description for painters…"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Start Date *</label>
+                <input type="date" class="form-control" id="camp-start">
+            </div>
+            <div class="form-group">
+                <label>End Date *</label>
+                <input type="date" class="form-control" id="camp-end">
+            </div>
+            <div class="form-group full-width">
+                <label>Target Products (leave blank = all)</label>
+                <select class="form-control" multiple style="height:80px" id="camp-products">
+                    <option value="P1">InteriorEmu Pro</option>
+                    <option value="P2">Exterior Shield XT</option>
+                    <option value="P3">Steel Coat Pro</option>
+                    <option value="P4">Primer Plus</option>
+                </select>
+            </div>
+            <div class="form-group full-width">
+                <label>Target Cities (leave blank = all)</label>
+                <input type="text" class="form-control" id="camp-cities" placeholder="e.g. Mumbai, Pune, Delhi">
+            </div>
+            <div class="form-group">
+                <label>Bonus Type</label>
+                <select class="form-control" id="camp-bonus-type" onchange="onBonusTypeChange(this.value)">
+                    <option value="multiplier">Multiplier (e.g. 2x)</option>
+                    <option value="flat">Flat Bonus Points</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label id="camp-bonus-label">Bonus Multiplier</label>
+                <input type="number" class="form-control" id="camp-bonus-val" value="2" step="0.5" min="1">
+            </div>
+        </div>
+    </div>
+    <div class="slide-panel-footer">
+        <button class="btn-ghost" onclick="RewardsUI.closeAll()">Cancel</button>
+        <button class="btn-primary" onclick="saveCampaign()">Create Campaign</button>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/rewards-admin.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => RewardsUI.initClosers());
+
+        function onBonusTypeChange(val) {
+            const lbl = document.getElementById('camp-bonus-label');
+            const inp = document.getElementById('camp-bonus-val');
+            if (val === 'multiplier') { lbl.textContent = 'Multiplier (e.g. 2 = 2x)'; inp.value = 2; inp.step = 0.5; }
+            else { lbl.textContent = 'Flat Bonus Points'; inp.value = 50; inp.step = 5; }
+        }
+
+        function toggleCampaign(id, active, name) {
+            alert(`Campaign "${name}" ${active ? 'activated' : 'deactivated'} successfully.`);
+        }
+
+        function saveCampaign() {
+            const name = document.getElementById('camp-name')?.value;
+            if (!name) { alert('Campaign name is required.'); return; }
+            alert(`Campaign "${name}" created and is now active!`);
+            RewardsUI.closeAll();
+        }
+    </script>
+}

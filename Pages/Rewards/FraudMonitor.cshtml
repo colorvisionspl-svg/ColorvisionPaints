@@ -1,0 +1,179 @@
+@page
+@model ColorvisionPaintsERP.Pages.Rewards.FraudMonitorModel
+@{
+    Layout = "_AppShell";
+    ViewData["Title"] = "Fraud Monitor";
+    var pending   = Model.Flags.Count(f => f.Status == "Pending");
+    var reviewed  = Model.Flags.Count(f => f.Status == "Reviewed");
+    var blocked   = Model.Flags.Count(f => f.Status == "Blocked");
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/procurement.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/rewards.css" asp-append-version="true" />
+}
+
+<div class="page-container">
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Fraud Monitor</h1>
+            <p class="page-subtitle">Real-time detection: high velocity scans · geo anomalies · bulk scans · duplicate devices</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+            <span class="status-pill status-active" style="animation:pulse 2s infinite">● Live</span>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="procurement-summary-row">
+        <div class="glass-card summary-card">
+            <p class="label">Pending Review</p>
+            <p class="value" style="color:#F76F6F">@pending</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Reviewed</p>
+            <p class="value" style="color:#22C997">@reviewed</p>
+        </div>
+        <div class="glass-card summary-card">
+            <p class="label">Painters Blocked</p>
+            <p class="value" style="color:#7C6FF7">@blocked</p>
+        </div>
+    </div>
+
+    <!-- Rules Reference Card -->
+    <div class="glass-card" style="padding:16px 20px;margin-bottom:20px">
+        <p style="font-size:13px;font-weight:700;margin:0 0 10px;color:var(--color-text-primary)">Detection Rules Active</p>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div style="display:flex;align-items:flex-start;gap:8px">
+                <span class="status-pill status-active" style="margin-top:1px;font-size:10px">On</span>
+                <div>
+                    <p style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin:0">High Velocity</p>
+                    <p style="font-size:11px;color:var(--color-text-muted);margin:0">&gt;20 scans/day same device</p>
+                </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:8px">
+                <span class="status-pill status-active" style="margin-top:1px;font-size:10px">On</span>
+                <div>
+                    <p style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin:0">Geo Anomaly</p>
+                    <p style="font-size:11px;color:var(--color-text-muted);margin:0">Same account, &gt;500km in 2 hrs</p>
+                </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:8px">
+                <span class="status-pill status-active" style="margin-top:1px;font-size:10px">On</span>
+                <div>
+                    <p style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin:0">Bulk Scan</p>
+                    <p style="font-size:11px;color:var(--color-text-muted);margin:0">&gt;5 scans same GPS in 1 hr</p>
+                </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:8px">
+                <span class="status-pill status-active" style="margin-top:1px;font-size:10px">On</span>
+                <div>
+                    <p style="font-size:12px;font-weight:700;color:var(--color-text-primary);margin:0">Duplicate Device</p>
+                    <p style="font-size:11px;color:var(--color-text-muted);margin:0">Multiple accounts, same fingerprint</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flags Table -->
+    <div class="glass-card table-wrapper">
+        <div class="filter-bar">
+            <div class="search-group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search painter, type…" oninput="RewardsUI.filterTable('fraud-table', this.value)">
+            </div>
+            <select class="filter-select">
+                <option>All Types</option>
+                <option value="high_velocity">High Velocity</option>
+                <option value="geo_anomaly">Geo Anomaly</option>
+                <option value="bulk_scan">Bulk Scan</option>
+                <option value="duplicate_device">Duplicate Device</option>
+            </select>
+            <select class="filter-select">
+                <option>All Status</option>
+                <option>Pending</option>
+                <option>Reviewed</option>
+                <option>Dismissed</option>
+                <option>Blocked</option>
+            </select>
+        </div>
+        <table class="data-table" id="fraud-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Painter</th>
+                    <th>Scan Count</th>
+                    <th>Time Window</th>
+                    <th>GPS / Location</th>
+                    <th>Flagged At</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var f in Model.Flags)
+                {
+                    var typeCls = f.Type switch {
+                        "high_velocity"    => "flag-high-velocity",
+                        "geo_anomaly"      => "flag-geo-anomaly",
+                        "bulk_scan"        => "flag-bulk-scan",
+                        "duplicate_device" => "flag-duplicate-device",
+                        _                  => ""
+                    };
+                    var typeLabel = f.Type switch {
+                        "high_velocity"    => "High Velocity",
+                        "geo_anomaly"      => "Geo Anomaly",
+                        "bulk_scan"        => "Bulk Scan",
+                        "duplicate_device" => "Duplicate Device",
+                        _                  => f.Type
+                    };
+                    var statusCls = f.Status switch {
+                        "Pending"   => "status-planned",
+                        "Reviewed"  => "status-released",
+                        "Dismissed" => "status-draft",
+                        "Blocked"   => "status-failed",
+                        _           => "status-draft"
+                    };
+                    <tr>
+                        <td>
+                            <span class="bold @typeCls">@typeLabel</span>
+                        </td>
+                        <td>@f.PainterName</td>
+                        <td style="font-weight:700;text-align:center">@f.ScanCount</td>
+                        <td>@f.TimeWindow</td>
+                        <td style="font-size:11px;font-family:monospace;max-width:160px;overflow:hidden;text-overflow:ellipsis">@f.GpsCoordinates</td>
+                        <td>@f.FlaggedAt.ToString("dd MMM HH:mm")</td>
+                        <td><span class="status-pill @statusCls">@f.Status</span></td>
+                        <td class="actions-cell">
+                            @if (f.Status == "Pending")
+                            {
+                                <button class="btn-primary" style="height:28px;font-size:11px;padding:0 10px" onclick="reviewFlag('@f.Id','@f.PainterName')">Review</button>
+                                <button class="btn-icon" title="Dismiss" onclick="dismissFlag('@f.Id')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                </button>
+                            }
+                            @if (f.Status is "Pending" or "Reviewed")
+                            {
+                                <button class="btn-icon" title="Block Painter" onclick="blockFromFlag('@f.Id','@f.PainterName')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F76F6F" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section PageScripts {
+    <script src="~/js/rewards-admin.js" asp-append-version="true"></script>
+    <script>
+        function reviewFlag(id, name) { alert(`Flag for "${name}" marked as Reviewed. No action taken.`); }
+        function dismissFlag(id) { alert('Flag dismissed.'); }
+        function blockFromFlag(id, name) {
+            if (confirm(`Block painter "${name}"? They will be unable to scan QR codes.`)) {
+                alert(`Painter "${name}" has been blocked due to fraud flag.`);
+            }
+        }
+    </script>
+}

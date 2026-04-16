@@ -1,0 +1,296 @@
+/* ================================================================
+   MANUFACTURING MODULE STYLES — Nexus Design System v2.0
+   ColorVision Paints ERP · Glassmorphism + Premium UI
+   ================================================================ */
+
+/* ── GANTT CHART ── */
+.gantt-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+}
+
+.gantt-grid {
+  display: grid;
+  min-width: 900px;
+}
+
+.gantt-header {
+  display: flex;
+  background: rgba(255,255,255,0.3);
+  border-bottom: 1.5px solid rgba(0,0,0,0.05);
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.gantt-row {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+
+.gantt-row:hover { background: rgba(0,0,0,0.015); }
+
+.gantt-label {
+  width: 160px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.gantt-track {
+  flex: 1;
+  position: relative;
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.gantt-bar {
+  position: absolute;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gantt-bar:hover { opacity: 0.85; transform: scaleY(1.05); }
+.gantt-bar-planned     { background: #8B92A9; }
+.gantt-bar-released    { background: #4F6EF7; }
+.gantt-bar-inprogress  { background: #F7A24F; }
+.gantt-bar-completed   { background: #22C997; }
+.gantt-bar-delayed     { background: #F76F6F; }
+
+/* ── FORMULATION INGREDIENT TABLE ── */
+.ingredient-table, .step-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+}
+
+.ingredient-table th, .step-table th {
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding: 6px 6px;
+  border-bottom: 1.5px solid rgba(0,0,0,0.06);
+  letter-spacing: 0.04em;
+}
+
+.ingredient-table td, .step-table td {
+  padding: 5px 6px;
+  vertical-align: middle;
+}
+
+.ingredient-table td input,
+.ingredient-table td select,
+.step-table td input,
+.step-table td textarea {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.09);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+}
+
+.ingredient-table td textarea,
+.step-table td textarea {
+  height: 32px;
+  resize: none;
+  padding: 6px 8px;
+}
+
+.ingredient-table td.pct-cell {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-accent);
+}
+
+.pct-total-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pct-total-ok   { color: #22C997; }
+.pct-total-bad  { color: #F76F6F; }
+
+/* ── QC TEST ROWS ── */
+.qc-test-row {
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  background: rgba(255,255,255,0.35);
+  border: 1px solid rgba(0,0,0,0.05);
+  transition: background 0.2s;
+  margin-bottom: 6px;
+}
+
+.qc-test-row.pass { background: rgba(34,201,151,0.08); border-color: rgba(34,201,151,0.2); }
+.qc-test-row.fail { background: rgba(247,111,111,0.08); border-color: rgba(247,111,111,0.2); }
+
+.qc-test-name { font-weight: 700; font-size: 13px; }
+.qc-target { font-size: 11px; color: var(--color-text-muted); }
+.qc-result-badge { font-size: 11px; font-weight: 700; text-align:center; }
+.qc-result-badge.pass { color: #22C997; }
+.qc-result-badge.fail { color: #F76F6F; }
+
+/* ── PRODUCTION LINE CARDS ── */
+.lines-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.line-card {
+  padding: 22px 24px;
+}
+
+.line-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.line-title { font-size: 16px; font-weight: 700; color: var(--color-text-primary); }
+.line-capacity { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+
+.progress-bar-wrap {
+  background: rgba(0,0,0,0.06);
+  border-radius: 20px;
+  height: 8px;
+  overflow: hidden;
+  margin: 12px 0 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #4F6EF7, #7C6FF7);
+  transition: width 0.4s ease;
+}
+
+.line-badge-idle        { background: #F0F2F8; color: #8B92A9; }
+.line-badge-active      { background: rgba(34,201,151,0.1); color: #22C997; }
+.line-badge-maintenance { background: rgba(247,111,111,0.1); color: #F76F6F; }
+
+/* ── STATUS BADGES — Manufacturing specific ── */
+.status-planned    { background: #F0F2F8; color: #8B92A9; }
+.status-released   { background: #EEF1FE; color: #4F6EF7; }
+.status-in-progress{ background: #FFF3E0; color: #F7A24F; }
+.status-qc-pending { background: #F3F0FF; color: #7C6FF7; }
+.status-completed  { background: rgba(34,201,151,0.1); color: #22C997; }
+.status-closed     { background: #F0F2F8; color: #8B92A9; }
+.status-failed     { background: rgba(247,111,111,0.1); color: #F76F6F; }
+.status-rework     { background: #FFF3E0; color: #F7A24F; }
+.status-passed     { background: rgba(34,201,151,0.1); color: #22C997; }
+.status-draft      { background: #F0F2F8; color: #8B92A9; }
+.status-active     { background: rgba(34,201,151,0.1); color: #22C997; }
+.status-archived   { background: #F0F2F8; color: #8B92A9; }
+
+/* ── AVAILABILITY CHECK PILL ── */
+.avail-ok    { color: #22C997; font-weight: 700; font-size: 12px; }
+.avail-short { color: #F76F6F; font-weight: 700; font-size: 12px; }
+
+/* ── DRAG HANDLE ── */
+.drag-handle {
+  cursor: grab;
+  color: var(--color-text-muted);
+  padding: 0 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.drag-handle:hover { opacity: 1; }
+
+/* ── BATCH DETAIL POPUP ── */
+.gantt-popup {
+  position: absolute;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  z-index: 3000;
+  min-width: 220px;
+  font-size: 13px;
+}
+
+/* ── COST SUMMARY ── */
+.cost-banner {
+  background: linear-gradient(135deg, rgba(79,110,247,0.08), rgba(124,111,247,0.06));
+  border: 1px solid rgba(79,110,247,0.15);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cost-banner-label { font-size: 12px; color: var(--color-text-muted); font-weight: 500; }
+.cost-banner-value { font-size: 22px; font-weight: 800; color: var(--color-accent); }
+
+/* ── OVERALL QC RESULT BANNER ── */
+.qc-overall-banner {
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.qc-overall-banner.pass {
+  background: rgba(34,201,151,0.1);
+  border: 1px solid rgba(34,201,151,0.25);
+  color: #22C997;
+}
+
+.qc-overall-banner.fail {
+  background: rgba(247,111,111,0.1);
+  border: 1px solid rgba(247,111,111,0.25);
+  color: #F76F6F;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1000px) {
+  .lines-grid { grid-template-columns: 1fr 1fr; }
+  .qc-test-row { grid-template-columns: 2fr 1fr 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  .lines-grid { grid-template-columns: 1fr; }
+  .gantt-label { width: 100px; font-size: 11px; }
+}
